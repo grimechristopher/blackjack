@@ -1,4 +1,5 @@
-const db = require('../query.js');
+// import gameManager from '../gameStateManager.js';
+const gameManager = require('../gameStateManager.js');
 
 module.exports = {
   io: (server) => {
@@ -13,50 +14,27 @@ module.exports = {
     io.on('connection', (socket) => {
       console.log('a new user connected');
 
-      socket.on('join room', async function (data) {
-        console.log('join room', data.roomId);
-        // console.log("ROOM", db.addPlayerToRoom(data.roomId))
-        let roomInfo = await db.addPlayerToRoom(data.roomId);
-        socket.emit('joined room', roomInfo);
-      });
+      // Authentication
+      const { token } = socket.handshake.auth;
+      console.log(token);
 
-      socket.on('leave room', function (data) {
-        console.log('leave room');
-        db.removePlayerFromRoom(data.roomId);
-        socket.emit('left room');
-      });
+      // import specific functionality
+      require('./room.js')(socket, io);
+      require('./seat.js')(socket, io);
 
-      socket.on('delete room', function (data) {
-        console.log('delete room');
-        db.deleteRoom(data.roomId);
-        socket.emit('deleted room');
-      });
-
-      socket.on('take seat', async function (data) {
-        console.log('take seat');
-        const seatInfo = await db.assignPlayerToSeat(data.seatId, data.roomId);
-        console.log(seatInfo)
-        socket.emit('assigned seat', seatInfo); // Need to change this to update everyone
-      });
-
-
-
-      socket.on('foo', function (data) {
-        console.log('wtf');
-      });
-
-      socket.on('take seat', function (data) {
-        console.log('sitting at table');
-      });
-
-      socket.on('leave seat', function (data) {
-        console.log('sitting at table');
-      });
-
+      // On disconnect
       socket.on('disconnect', () => {
         console.log('user disconnected');
 
-        // TODO: remove anyone disconnecting from the account_room table
+      })
+
+
+      // Game Test Related
+
+      socket.on('start game', () => {
+        console.log('start game');
+        gameManager.startGame();
+        // io.emit('game started');
       })
 
     });

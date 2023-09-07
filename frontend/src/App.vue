@@ -1,31 +1,26 @@
 <template>
   <div>
     <RoomsList />
+    <GameRoom />
+    <Debug />
   </div>
-  <!-- <ConnectionManager /> -->
-  <!-- <GameTable/> -->
-  <!-- <GameControls /> -->
 </template>
 
 <script>
+import { socket } from "@/socket";
 import RoomsList from "@/components/RoomsList.vue"
-
-// import ConnectionManager from "@/components/ConnectionManager.vue"
-// import GameTable from "@/components/GameTable.vue"
-// import GameControls from "@/components/GameControls"
+import GameRoom from "@/components/GameRoom.vue"
+import Debug from "@/components/Debug.vue"
 
 export default {
   name: 'App',
   components: {
     RoomsList,
-
-
-    // GameTable,
-    // GameControls,
-    // ConnectionManager,
+    GameRoom,
+    Debug,
   },
-  mounted: async function () {
-
+  created: async function () {
+    socket.connect();
   },
 }
 </script>

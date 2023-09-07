@@ -1,41 +1,75 @@
 import { createStore } from 'vuex'
-import { generateDecks } from '@/components/data/deck';
-import { createMockPlayers } from '@/components/data/players';
-import { getUserId } from '@/components/data/user';
+import { generateDecks } from '@/old_components/data/deck';
+import { createMockPlayers } from '@/old_components/data/players';
+import { getUserId } from '@/old_components/data/user';
 
 export default createStore({
   state: {
-    activeRoomId: null,
-    activeDeckLength: 0,
-    activePlayers: [],
-    activeSeats: [],
-    playersInRoom: [],
+    room: { // Want to move room stuff here
+      id: null,
 
-    userInfo: {},
 
-    deck: [],
-    players: [],
-    user: {},
+      deckLength: 0,
+    },
+    user: {
+      // seat: null,
+      isConnected: false,
+      seatId: null,
+    },
   },
   mutations: {
-    UPDATE_ActiveInfo(state, data) {
+    // Connection
+    UPDATE_User(state, data) {
+      state.user.isConnected = data.isConnected;
+    },
+    UPDATE_Room(state, data) {
+      console.log(data);
       if (data) {
-        state.activeRoomId = data.roomId;
-        state.activeDeckLength = data.deckLength;
-        state.activeSeats = data.seats;
-        state.playersInRoom = data.playersInRoom;
-        state.activePlayers = data.activePlayers;
+        console.log(data);
+        state.room.id = data.id;
+        state.room.seats = data.seats;
+        state.room.players = data.players;
+        state.room.deckLength = data.deckLength;
+
+        // check if the user is sitting at a seat in the room already.
+        state.user.seatId = data.userSeatId;
       }
       else {
-        state.activeRoomId = null;
-        state.activeDeckLength = 0;
-        state.activePlayers = [];
-        state.activeSeats = [];
-        state.playersInRoom = [];
+        state.room.id = null;
+        state.room.seats = null;
+        state.room.players = null;
       }
     },
+
+    UPDATE_UserSeat(state, data) {
+      state.user.seatId = data;
+    },
+    UPDATE_Seats(state, data) {
+
+      // find index of seat and update
+      console.log("data", data)
+      // const index = state.room.seats.findIndex(seat => seat.id === data.seats.id);
+      state.room.seats = data;
+
+
+      // console.log(state.room.seats)
+      // state.activePlayers = data.activePlayers;
+      // const oldIndex = state.activeSeats.findIndex(seat => seat.account_id === data.accountId);
+      // const index = state.activeSeats.findIndex(seat => seat.id === data.seatId);
+      // if (oldIndex !== -1) {
+      //   state.activeSeats[oldIndex].account_id = null;
+      // }
+      // state.activeSeats[index].account_id = data.accountId;
+      // console.log(state.activeSeats)
+    },
+
+
+
+
     UPDATE_ActiveRoomSeat(state, data) {
       console.log(data);
+      state.user.seat = state.activeSeats.find(seat => seat.id === data.seatId);
+      state.activePlayers = data.activePlayers;
       const oldIndex = state.activeSeats.findIndex(seat => seat.account_id === data.accountId);
       const index = state.activeSeats.findIndex(seat => seat.id === data.seatId);
       if (oldIndex !== -1) {
@@ -72,19 +106,39 @@ export default createStore({
     },
   },
   actions: {
+    // Connection
+    updateUserConnection({ commit }, {data}) {
+      commit('UPDATE_User', data);
+    },
+
+    // Rooms
+    updateRoom({ commit }, {data}) {
+      commit('UPDATE_Room', data);
+    },
+
+    updateUserSeat({ commit }, {data}) {
+      commit('UPDATE_UserSeat', data);
+    },
+
+    updateSeats({ commit }, {data}) {
+      commit('UPDATE_Seats', data);
+    },
+
+
+
     joinRoom({ commit }, {data}) {
-      // console.log("Inside joinroom", data);
-      commit('UPDATE_ActiveInfo', data);
+      commit('UPDATE_Room', data);
     },
     leaveRoom({ commit }) {
-      console.log("Inside leave");
-      commit('UPDATE_ActiveInfo', null);
+      commit('UPDATE_Room', null);
     },
-    updateSeat({ commit }, data) {
-      // console.log("Inside leave");
-      console.log(data)
-      commit('UPDATE_ActiveRoomSeat', data);
-    },
+
+    // // Seats
+    // updateSeat({ commit }, data) {
+    //   // console.log("Inside leave");
+    //   console.log(data)
+    //   commit('UPDATE_ActiveRoomSeat', data);
+    // },
 
 
 

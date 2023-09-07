@@ -2,6 +2,7 @@ const { pool } = require('./dbconnection.js');
 
 const MAX_SEATS = 8;
 
+// Rooms
 async function addPlayerToRoom(roomId) {
   // TODO: Calculate userId
   let userId = 1;
@@ -15,7 +16,7 @@ async function addPlayerToRoom(roomId) {
   }
   catch (error) {
     if (error.code === '23505') {
-      console.log('User already in room');
+      console.error('User already in room');
       // return;
     }
     else {
@@ -24,7 +25,6 @@ async function addPlayerToRoom(roomId) {
   }
 
   // gather room data
-  // console.log(tableSeats);
   let deckLength = await pool.query(`SELECT COUNT(*) FROM card WHERE room_id = ${roomId};`);
   let seats = await pool.query(`SELECT * FROM seat WHERE room_id = ${roomId} ORDER BY seat_number;`);
   let playersInRoom = await pool.query(`SELECT * FROM account_room JOIN account ON account_room.account_id = account.id WHERE room_id = ${roomId};`);
@@ -36,7 +36,6 @@ async function addPlayerToRoom(roomId) {
     activePlayers: activePlayers.rows,
     roomId: roomId, // Sure why not pass this back
   }
-  console.log(roomInfo)
   return roomInfo;
 
 }
@@ -45,124 +44,44 @@ async function removePlayerFromRoom(roomId) {
   // TODO: Calculate userId
   let userId = 1;
 
+ // TODO
+//  remove hands from player
+// Remove player from seat
+
+
   // delete row with user id and room id from account_room table
   try {
-    console.log(`DELETE FROM account_room WHERE account_id = ${userId} AND room_id = ${roomId};`)
     let { rows } = await pool.query(`DELETE FROM account_room WHERE account_id = ${userId} AND room_id = ${roomId};`);
-    console.log(rows);
   }
   catch (error) {
     if (error.code === '42703') {
-      console.log('User already not in room');
+      console.error('User already not in room');
       return;
     }
     console.log(error);
   }
 }
 
-async function createRoom(roomId) {
-  // delete row with user id and room id from account_room table
-  try {
-    // console.log(`DELETE FROM account_room WHERE account_id = ${userId} AND room_id = ${roomId};`)
-    let { rows } = await pool.query(`INSERT INTO room DEFAULT VALUES returning id;`);
-    console.log(rows);
-    return rows;
-  }
-  catch (error) {
-    // if (error.code === '42703') {
-    //   console.log('User already not in room');
-    //   return;
-    // }
-    console.log(error);
-  }
+
+async function updateDeck(cards) {
+  // unnest array so postgresql can read it
+  // let unnestedArray = "SELECT UNNEST(ARRAY['id']) as id, UNNEST(ARRAY['hand_id']) as hand_id, UNNEST(ARRAY['room_id']) as room_id FROM card;";
+  // await pool.query(`UPDATE card SET (room_id, hand_id) = () WHERE id = ${userId}`);
+  // let cardsJSONString = JSON.stringify(cards);
+  let values = cards.map((card) => `(${card.id}, ${card.room_id}, ${card.hand_id})`).join(',');
+
+  let query = `UPDATE card set (room_id, hand_id) = (values ${values}) AS v (id, room_id, hand_id) WHERE v.id = card.id;`;
+  console.log(query);
+  await pool.query(query);
+  // "UPDATE card SET (room_id, hand_id) = ()"
 }
 
-async function deleteRoom(roomId) {
-  let { rows } = await pool.query(`DELETE FROM room where id = ${roomId};`);
-}
-
-async function addCardsToRoom(roomId, decksAmount) {
-  try {
-    // Create decks
-    // Insert into cards table
-    const cards = await createDecks(decksAmount);
-    // console.log(cards)
-
-    let values = cards.map((card) => `(${card.value}, '${card.face}', '${card.suit}', ${roomId})`).join(',');
-    await pool.query(`INSERT INTO card (card_value, face, suit, room_id) VALUES ${values};`);
-    // Card will be a db table
-    // Columns needed are value, face?, suit, room, and I suppose hand.
-    // Lack of hand id would mean the card is in the deck
-    // Dealer can be hand 0;
-    // Do I also need a player id?
-
-
-
-    // let { rows } = await pool.query(`INSERT INTO room DEFAULT VALUES returning id;`);
-    // console.log(rows);
-    // return rows;
-  }
-  catch (error) {
-    console.log(error);
-  }
-}
-
-async function createDecks(amount) {
-  let decks = [];
-
-  for (let i = 0; i <  amount; i++) {
-    decks.push(...createDeck())
-  }
-
-  return decks;
-}
-
-function createDeck() {
-  let deck = [];
-
-  let suits = ['clubs', 'diamonds', 'hearts', 'spades'];
-  let cardsPerSuit = 13;
-
-  for (let i = 0; i < suits.length; i++) {
-    for (let j = 1; j <= cardsPerSuit; j++) {
-      // Handle face
-      let face = j;
-      switch (face) {
-        case 1:
-          face = 'A';
-          break;
-        case 11:
-          face = 'J';
-          break;
-        case 12:
-          face = 'Q';
-          break;
-        case 13:
-          face = 'K';
-          break;
-      }
-
-      let card = {
-        value: j,
-        face: face,
-        suit: suits[i],
-      }
-      deck.push(card);
-    }
-  }
-
-  return deck;
-}
-
+// Seats
 async function addSeatsToRoom(roomId, amount) {
-  // let result = await pool.query(`SELECT * FROM seat WHERE room_id = ${roomId};`);
-  // let tableSeats = result.rowCount;
-
-  // if (tableSeats !== MAX_SEATS) {
-    // Create an array of incrementing numbers then map it to form a array of values, one for the room id and one for the seat number
-    let values = [...Array(amount+1).keys()].map((i) => `(${roomId}, ${i})`).join(','); // extra for the dealer seat. dealer seat is 0
-    await pool.query(`DELETE FROM seat WHERE room_id = ${roomId};`);
-    await pool.query(`INSERT INTO seat (room_id, seat_number) VALUES ${values};`);
+  // Create an array of incrementing numbers then map it to form a array of values, one for the room id and one for the seat number
+  let values = [...Array(amount+1).keys()].map((i) => `(${roomId}, ${i})`).join(','); // extra for the dealer seat. dealer seat is 0
+  await pool.query(`DELETE FROM seat WHERE room_id = ${roomId};`);
+  await pool.query(`INSERT INTO seat (room_id, seat_number) VALUES ${values};`);
   // }
 }
 
@@ -193,15 +112,62 @@ async function assignPlayerToSeat(seatId, roomId) {
   return null;
 }
 
+async function unassignPlayerFromSeat(seatId, roomId) {
+  const userId = 1;
 
-// async function createDeckCards
+  // Remove player from seat
+  // Cards should leave hands ... after the round is over not when player gets up
+  await pool.query(`UPDATE seat SET account_id = null WHERE account_id = ${userId}`);
+
+  return null;
+}
+
+// GAME STATE INFO
+async function getGameInfo(userId) {
+  const room = await pool.query(`SELECT * FROM account_room JOIN room ON account_room.room_id = room.id WHERE account_id = ${userId};`);
+  const seat = await pool.query(`SELECT * FROM seat WHERE account_id = ${userId} ORDER BY seat_number;`); // I dont think I care
+  let players = await pool.query(`SELECT * FROM account JOIN seat ON account.id = seat.account_id WHERE account.id IN (SELECT account_id FROM seat WHERE room_id = ${room.rows[0].id}) ORDER BY seat_number;`);
+
+
+  // Create hands for players that dont have a hand
+  console.log("players:", players.rows);
+
+  // hands have a relationship to players. Each hand has an account_id.
+  // I want to insert a hand for each player sitting in this room that does not have a hand already.
+  // To do that I need to get the id of each player that is sitting in a seat in this room that does not have a hand and insert a hand into the hand table with that account id.
+  await pool.query(`INSERT INTO hand (account_id) SELECT account_id FROM seat WHERE room_id = ${room.rows[0].id} AND account_id NOT IN (SELECT account_id FROM hand) AND account_id IS NOT NULL;`);
+
+
+
+  const hands = await pool.query(`SELECT * FROM hand WHERE account_id IN (SELECT account_id FROM seat WHERE room_id = ${room.rows[0].id});`) // Broken?
+  const dealersHand = await pool.query(`SELECT * FROM card WHERE room_id = ${room.rows[0].id} AND hand_id = 0;`);
+  const deck = await pool.query(`SELECT * FROM card WHERE room_id = ${room.rows[0].id} AND hand_id IS NULL;`)
+
+  players.rows.forEach(player => {
+    player.hands = hands.rows.filter(hand => hand.account_id === player.id);
+  });
+
+  console.log(players.rows)
+
+  return {
+    room: room.rows[0],
+    seat: seat.rows[0],
+    players: players.rows,
+    dealersHand: dealersHand.rows,
+    deck: deck.rows,
+  }
+}
+
 
 module.exports = {
   addPlayerToRoom,
   removePlayerFromRoom,
-  createRoom,
-  addCardsToRoom,
+  // createRoom,
+  // addCardsToRoom,
+  updateDeck,
   addSeatsToRoom,
-  deleteRoom,
+  // deleteRoom,
   assignPlayerToSeat,
+  unassignPlayerFromSeat,
+  getGameInfo,
 }
