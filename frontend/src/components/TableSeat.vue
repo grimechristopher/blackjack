@@ -1,60 +1,57 @@
 <template>
   <div>
-    <p v-if="!isDealer">Seat {{ seatPosition }}</p>
-    <p v-if="isDealer">Dealer</p>
-    <button v-if="!playerId && !isDealer" @click="takeSeat">Take Seat</button>
-    <div v-if="playerId">{{ player ? player.username : 'doh' }}</div>
+    <h3 v-if="seat.number > 0">Seat {{ seat.number }}</h3>
+            <h3 v-if="seat.number === 0">Dealer</h3>{{ seat }}
+
+            <div> <!-- Hands -->
+              <div v-for="hand in hands" :key="hand.id">Hello
+                <SeatHand :hand="hand" />
+              </div>
+            </div>
+
+            <div v-if="!seat.account_id && seat.number > 0">
+                <button @click="sit(seat)">Sit</button>
+            </div>
+            <div v-if="seat.account_id && seat.id == userSeatId">
+                <button @click="leave(seat)">Leave</button>
+            </div>
   </div>
 </template>
 
 <script>
-// import PlayerHands from "@/components/PlayerHands.vue";
-// import DebugControls from "@/components/DebugControls.vue";
-// import HandControls from "@/components/HandControls.vue";
-import { socket } from "@/socket";
+import { socket } from '@/socket';
+import SeatHand from "@/components/SeatHand.vue";
 
 export default {
   name: "TableSeat",
-  components: {/*DebugControls,*/ /*HandControls*/},
-  data: function () {
-    return {
-      // player: {},
-    }
-  },
+  components: {SeatHand,},
   props: {
-    // These are constants that describe the seat.
-    seatPosition: Number,
-    roomId: Number,
-    seatId: Number,
+    seat: Object,
+  },
+  data: function () {
+    return {};
   },
   computed: {
-    playerId: function () {
-      if (this.$store.state.activeSeats) {
-        return this.$store.state.activeSeats.find(seat => seat.id === this.seatId).account_id;
+    userSeatId() {
+      if (this.$store.state.user.seatId) {
+        return this.$store.state.user.seatId;
       }
-      return [];
+      return null;
     },
-    player: function () {
-      if (this.$store.state.activePlayers) {
-        if (this.playerId) {
-          console.log(this.playerId)
-          return this.$store.state.activePlayers.find((player) => { console.log(this.playerId); return player.id === this.playerId});
-        }
+    hands() {
+      if (this.$store.state.room.hands) {
+        return this.$store.state.room.hands.filter((hand) => hand.seat_id === this.seat.id);
       }
-      return [];
-    },
-    isDealer: function () {
-      return (this.seatPosition === 0);
+      return null;
     },
   },
   methods: {
-    takeSeat: async function () {
-      console.log(this.roomId);
-      socket.emit('take seat', {seatId: this.seatId, roomId: this.roomId});
+    async sit(seat) {
+      socket.emit("take seat", seat);
+    },
+    async leave(seat) {
+      socket.emit("leave seat", seat);
     },
   },
-  mounted: async function () {
-
-  }
-}
+};
 </script>

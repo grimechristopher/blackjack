@@ -57,6 +57,20 @@ socket.on("player left seat", (data) => {
   store.dispatch('updateSeats', {data});
 });
 
+socket.on("hands updated", (data) => {
+  store.dispatch('updateHands', {data});
+});
+
+socket.on("cards updated", (data) => {
+  console.log("Indeed cards updated")
+  store.dispatch('updateCards', {data});
+});
+
+socket.on("seats updated", (data) => {
+  console.log("Indeed seats updated")
+  store.dispatch('updateSeats', {data});
+});
+
 
 
 

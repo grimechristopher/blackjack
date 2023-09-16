@@ -10,11 +10,6 @@ async function leaveRoom(userId) {
     pool.query(`UPDATE account SET room_id = NULL WHERE id = ${userId};`);
 }
 
-// get account info
-async function getAccountInfo(userId) {
-    // Return name seat, room, hands, cards
-}
-
 module.exports = {
     joinRoom,
     leaveRoom,

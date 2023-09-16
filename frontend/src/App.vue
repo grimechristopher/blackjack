@@ -2,6 +2,7 @@
   <div>
     <RoomsList />
     <GameRoom />
+    <GameControls />
     <Debug />
   </div>
 </template>
@@ -10,6 +11,7 @@
 import { socket } from "@/socket";
 import RoomsList from "@/components/RoomsList.vue"
 import GameRoom from "@/components/GameRoom.vue"
+import GameControls from "@/components/GameControls.vue"
 import Debug from "@/components/Debug.vue"
 
 export default {
@@ -17,6 +19,7 @@ export default {
   components: {
     RoomsList,
     GameRoom,
+    GameControls,
     Debug,
   },
   created: async function () {

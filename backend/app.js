@@ -15,6 +15,4 @@ app.get('/api/', (req, res) => {
   res.send('Hello World!');
 });
 
-// const { pool } = require('./dbconnection.js');
-
 module.exports = app;

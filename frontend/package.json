@@ -4,10 +4,12 @@
   "private": true,
   "scripts": {
     "serve": "vue-cli-service serve",
+    "dev": "concurrently \"vue-cli-service serve\" \"cd ../backend && npm run start\"",
     "build": "vue-cli-service build",
     "lint": "vue-cli-service lint"
   },
   "dependencies": {
+    "concurrently": "^8.2.1",
     "core-js": "^3.8.3",
     "socket.io-client": "^4.7.1",
     "vue": "^3.2.13",

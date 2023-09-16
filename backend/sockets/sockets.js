@@ -3,7 +3,6 @@ const gameManager = require('../gameStateManager.js');
 
 module.exports = {
   io: (server) => {
-
     const { Server } = require("socket.io");
     const io = new Server(server, {
       cors: {
@@ -11,7 +10,7 @@ module.exports = {
       }
     });
 
-    io.on('connection', (socket) => {
+    io.on('connection', async (socket) => { //async correct?
       console.log('a new user connected');
 
       // Authentication
@@ -19,7 +18,7 @@ module.exports = {
       console.log(token);
 
       // import specific functionality
-      require('./room.js')(socket, io);
+      await require('./room.js')(socket, io); // await correct?
       require('./seat.js')(socket, io);
 
       // On disconnect
@@ -27,16 +26,6 @@ module.exports = {
         console.log('user disconnected');
 
       })
-
-
-      // Game Test Related
-
-      socket.on('start game', () => {
-        console.log('start game');
-        gameManager.startGame();
-        // io.emit('game started');
-      })
-
     });
   },
 }
