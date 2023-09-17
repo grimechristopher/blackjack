@@ -33,6 +33,7 @@ export default createStore({
 
         state.room.hands = data.hands;
         state.room.cards = data.cards;
+        state.room.turn = 0;
 
         // check if the user is sitting at a seat in the room already.
         state.user.seatId = data.userSeatId;
@@ -45,9 +46,14 @@ export default createStore({
     },
 
     UPDATE_UserSeat(state, data) {
+      console.log(data);
       state.user.seatId = data;
     },
     UPDATE_Seats(state, data) {
+      console.log("Updating Seats in store")
+      if (data.find(seat => seat.id === state.user.seatId && seat.status === 'Finished') ) {
+        state.user.seatId = null;
+      }
       state.room.seats = data;
     },
     UPDATE_Hands(state, data) {
@@ -55,6 +61,9 @@ export default createStore({
     },
     UPDATE_Cards(state, data) {
       state.room.cards = data;
+    },
+    UPDATE_Turn(state, data) {
+      state.room.turn = data;
     },
 
 
@@ -99,6 +108,10 @@ export default createStore({
 
     updateCards({ commit }, {data}) {
       commit('UPDATE_Cards', data);
+    },
+
+    updateTurn({ commit }, {data}) {
+      commit('UPDATE_Turn', data);
     },
 
     // updateSeats({ commit }, {data}) {

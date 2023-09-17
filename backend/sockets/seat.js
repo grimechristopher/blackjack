@@ -6,19 +6,19 @@ const USER_ID = 1;
 module.exports = function(socket, io) {
   socket.on('take seat', async function (data) {
     await seatService.assignAccount(data);
-    // let seats = await seatService.getSeats(data.room_id);
+    const seats = await seatService.getSeats(data.room_id);
 
-    gameManager.playerJoined(USER_ID);
+    gameManager.startLoop(USER_ID);
 
     socket.emit('took seat', data.id); // Tell client that they are in a seat
-    // io.to('Room_' + data.room_id).emit('player took seat', seats); // I already emit this information from the game manager
+    io.to('Room_' + data.room_id).emit('player took seat', seats); // Tell everyone in the room that seats have changed
   });
 
   socket.on('leave seat', async function (data) {
     await seatService.unassignAccount(data);
     // let seats = await seatService.getSeats(data.room_id);
 
-    gameManager.playerLeft(USER_ID);
+    gameManager.endLoop(USER_ID);
 
     socket.emit('left seat', null); // Tell client that they left their seat
     // io.to('Room_' + data.room_id).emit('player left seat', seats);
@@ -34,6 +34,10 @@ module.exports = function(socket, io) {
 
   socket.on('notifyCardsHaveChanged', async function (data) {
     io.to('Room_' + data.roomId).emit('cards updated', data.cards);
+  });
+
+  socket.on('notifyTurnHasChanged', async function (data) {
+    io.to('Room_' + data.roomId).emit('turn updated', data.turn);
   });
 
 

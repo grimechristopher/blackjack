@@ -71,6 +71,11 @@ socket.on("seats updated", (data) => {
   store.dispatch('updateSeats', {data});
 });
 
+socket.on("turn updated", (data) => {
+  console.log("Indeed turn updated")
+  store.dispatch('updateTurn', {data});
+});
+
 
 
 

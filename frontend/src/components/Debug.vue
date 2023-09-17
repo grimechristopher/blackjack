@@ -7,6 +7,7 @@
         <h4>You are in {{ activeRoom }}</h4>
         <h4>Connected: {{ isConnected }}</h4>
         <h4>Seat Id: {{ seatId }}</h4>
+        <h4>Seat Turn: {{ turnNumber }}</h4>
       </div>
     </div>
   </div>
@@ -34,6 +35,12 @@ export default {
     seatId() {
       if (this.$store.state.user.seatId) {
         return this.$store.state.user.seatId;
+      }
+      return null;
+    },
+    turnNumber() {
+      if (this.$store.state.room) {
+        return this.$store.state.room.turn;
       }
       return null;
     },

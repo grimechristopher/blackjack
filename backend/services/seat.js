@@ -38,19 +38,21 @@ async function assignAccount(seat) {
   }
   await pool.query(`UPDATE seat SET status = 'Finished' WHERE account_id = ${USER_ID};`);
   await pool.query(`UPDATE seat SET account_id = ${USER_ID}, status = 'Ready' WHERE id = ${seat.id};`);
+  console.log("Assigned Player")
 }
 
 async function unassignAccount(seat) {
   await pool.query(`UPDATE seat SET status = 'Finished' WHERE account_id = ${USER_ID};`); // User actually leaves all seats.
   // When the seat the user was sitting in has no hands. dont bother moving to Finished just set account id and status to null
-  await pool.query(`UPDATE seat
-                    SET account_id = null, status = null
-                    FROM seat s
-                    LEFT JOIN hand h ON h.seat_id = s.id
-                    WHERE seat.account_id = ${USER_ID}
-                    AND seat.status = 'Finished'
-                    AND h.id IS NULL;`
-  );
+  // WTF THIS QUERY IS BROKEN
+  // await pool.query(`UPDATE seat
+  //                   SET account_id = null, status = null
+  //                   FROM seat s
+  //                   LEFT JOIN hand h ON h.seat_id = s.id
+  //                   WHERE seat.account_id = ${USER_ID}
+  //                   AND seat.status = 'Finished'
+  //                   AND h.id IS NULL;`
+  // );
 }
 
 async function updateStatuses(roomId) {

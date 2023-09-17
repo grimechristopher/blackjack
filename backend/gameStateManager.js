@@ -10,6 +10,7 @@ socket.on('connect', function (socket) {
 const roomService = require('./services/room.js');
 const seatService = require('./services/seat.js');
 const cardService = require('./services/card.js');
+const accountService = require('./services/account.js');
 
 let players = [];
 let seats = [];
@@ -20,7 +21,7 @@ let room = {};
 /*
 I need to simplify/organize this heavily!
 There is a room.current_turn that tracks who's turn it is.
-There is a room.loop_status that tracks the activity of the loop. [Inactive, Begin, Active, Finishing]
+There is a room.loop_status that tracks the activity of the loop. [Inactive, Beginning, Active, Finishing]
 There is a room.current_action that tracks what action is being taken. [Start, Dealing, Moving, Calculating, Awaiting Input, Finished]
 There is a seat.status that tracks the status of the seat. [Ready, Active, Finished]
 
@@ -48,227 +49,316 @@ Finished - Player is finished playing
 At the end of the round finished players will have their stats recorded and be removed. Ready players will move to active. Anyone sitting in the "on deck" position in a seat will be moved to seat and set as active
 */
 
-async function handleState(roomId) {
-  // Variables that determine the state of the game
-  // room.current_turn
-  // room.curent_action
-  // room.isactive
-  // seat.status
-  console.log("handle state")
-  await updateGameInfo(roomId); // Always start loop by grabbing the most up to date game info
+// Loop Starter and Loop Ender
+// A game starts when a player joins a game that is inactive
+// A game ends when the last player leaves a game that is active
+async function startLoop(userId) {
+  // Grab stored game info from db
+  const roomId = await roomService.getPlayerRoom(userId)
+  await updateGameInfo(roomId);
 
-  // Clean up table
-  // Remove finished players and activate ready players
-  await updateSeatStatuses(roomId);
-
-  // Room is new. Set action to start and current turn to 0(Dealer)
-  if (room.current_action === null) {
-    room.current_action = 'Start';
-    roomService.updateAction(roomId, 'Start');
-  }
-
-  if (room.current_turn === null) {
-    room.current_turn = 0;
-    roomService.nextTurn(roomId);
-  }
-
-  if (room.current_action === 'Start' && room.current_turn === 0) {
-    handleDealersTurn(roomId);
-  }
-  if (room.current_action === 'Moving' && room.current_turn === 0) {
-    console.log("Dealer is up and we need to calculate")
-  }
-  else if (room.current_turn > 0) {
-    console.log("Current turn", room.current_turn)
-    handlePlayersTurn(roomId);
+  // Check if room is inactive OR finishing
+  console.log(room)
+  if (room.loop_status === 'Inactive' || room.loop_status === 'Finishing') {
+    console.log("First player joined")
+    // Activate the room
+    // Set loop status to begin
+    room.loop_status = 'Beginning';
+    await roomService.updateStatus(roomId, 'Beginning'); // TODO
+    // While loop status is begining or active run the game loop
+    while (room.loop_status === 'Beginning' || room.loop_status === 'Active') {
+      console.log(room.loop_status);
+      await handleState(roomId);
+    }
   }
   else {
-    // handle Error
-    console.error("Error: Invalid game state. Current action is not Start and current turn is not 0(Dealer)", room.current_action, room.current_turn)
+    console.log("Room Status:", room.loop_status)
   }
-
+  // else: game loop is already running and nothing needs to trigger
 }
 
-async function playerJoined(userId) { // Start game loop
-  await getGameInfo(userId); // Grab stored game info from db
-  if (room.isactive === false || room.isactive === null) {
-    room.isactive = true;
-    await roomService.activateRoom(room.id);
-  }
-  // While game state is active ?
-  while (room.isactive === true) {
-    await handleState(room.id);
-  }
+async function endLoop(userId) {
+//   // Grab stored game info from db
+//   const roomId = await roomService.getPlayerRoom(userId)
+//   await updateGameInfo(roomId);
+
+//  // Check to see if there are any active seats in the rooom and if not deactivate the room
+//  const readySeats = seats.filter(seat => seat.status === 'Ready' || seat.status === 'Active');
+
+//   if (readySeats.length === 0) {
+//     console.log("All Players Left")
+//     room.loop_status = 'Finishing';
+//     await roomService.updateStatus(room.id, 'Finishing');
+//   }
 }
 
-async function playerLeft(userId) { // End game loop
-  // Room should be deactivated if all players leave
-  await getGameInfo(userId); // Grab stored game info from db
-  readySeats = seats.filter(seat => seat.status === 'Ready' || seat.status === 'Active');
-  if (readySeats.length === 0) {
-    room.gameState = false;
-    // Also deactivate the room in db.
-    await roomService.deactivateRoom(room.id);
-  }
-}
-
-async function getGameInfo(userId) {
-  const roomId = await roomService.getPlayerRoom(userId)
-
-  console.log("Geting Game Info")
-  await updateGameInfo(roomId);
-}
-
+// Update all info about the game
 async function updateGameInfo(roomId) {
-  console.log("Updating Game Info")
+  // console.log("Updating Game Info")
   players = await roomService.getPlayers(roomId);
   seats = await seatService.getSeats(roomId);
   room = await roomService.getRoom(roomId);
 }
 
-async function updateSeatStatuses(roomId) {
-  seats = await seatService.updateStatuses(roomId);
+async function handleState(roomId) {
+  await updateGameInfo(roomId);
+
+  if (room.loop_status === 'Inactive') {
+    console.log("Inactive loop")
+    // Do nothing
+    return;
+  }
+
+  // Active, beginning, finishing all have actions the loop needs to complete
+  // The action is determined by the current turn
+
+  if (room.loop_status === 'Beginning') {
+    // A new game is starting
+    console.log('Room is beginning');
+    room.loop_status = 'Active';
+    room.current_action = 'Start';
+    await roomService.updateStatus(room.id, 'Active');
+    await roomService.updateAction(roomId, 'Start');
+    await seatService.updateStatuses(roomId);
+  }
+
+  if (room.loop_status === 'Active') {
+    console.log("Room is active")
+    console.log("Current turn is ", room.current_turn)
+
+    if (room.current_action === 'Awaiting Input' && room.current_turn > 0) {
+      await handlePlayersTurn(roomId, room.current_turn)
+    }
+
+    else if (room.current_action === 'Moving') {
+      // setActiveSeat(roomId);
+      console.log("Moving seats")
+      room.current_turn = await roomService.nextTurn(roomId)
+
+      room.current_action = 'Awaiting Input';
+      await roomService.updateAction(roomId, 'Awaiting Input');
+
+      // Notify everyone that the active turn has changed.
+      socket.emit('notifyTurnHasChanged', {
+        roomId: roomId,
+        turn: room.current_turn,
+      });
+
+      // return; // ?
+    }
+
+    else if (room.current_action === 'Start') {
+      // Remove hands leftover from previous round and insert a single hand to all seats.
+      console.log("Handle Start");
+      await seatService.refreshHands(roomId);
+
+      console.log("Set Action to dealing")
+      room.current_action = 'Dealing';
+      await roomService.updateAction(roomId, 'Dealing');
+    }
+
+    else {
+      // This is the dealers turn
+      await handleDealersTurn(roomId);
+    }
+    // }
+  }
+  console.log("handle state end");
 }
 
 async function handleDealersTurn(roomId) {
-  roomService.updateAction(roomId, 'Dealing');
-  await seatService.refreshHands(roomId);
-  // Dealer will be dealing cards to all active players
-  hands = await seatService.getHands(roomId); // only players/seats with status of active will have hands
-  console.log("hands", hands)
-  // Deal cards to active seats
-  await cardService.initialDeal(roomId, hands);
-  cards = await cardService.getCardsInHands(roomId);
+  // Dealers action depends on what the current action is.
+  if (room.current_action === 'Dealing') {
+    // Dealer will be dealing cards to all active players
+    hands = await seatService.getHands(roomId); // only players/seats with status of active will have hands
+    // Deal cards to active seats
+    await cardService.initialDeal(roomId, hands);
+    cards = await cardService.getCardsInHands(roomId);
 
-  // Get the cards from the deck and update the cards with the hand.
-  socket.emit('notifyHandsHaveChanged', {
-    roomId: roomId,
-    hands: hands,
-  });
+    // Notify all in the room of changes to hands and cards
+    socket.emit('notifyHandsHaveChanged', {
+      roomId: roomId,
+      hands: hands,
+    });
 
-  socket.emit('notifyCardsHaveChanged', {
-    roomId: roomId,
-    cards: cards,
-  });
+    socket.emit('notifyCardsHaveChanged', {
+      roomId: roomId,
+      cards: cards,
+    });
 
-  // Dealers turn is over.
-  // update turn to next seat that is active.
-  roomService.updateAction(roomId, 'Moving');
-  roomService.nextTurn(roomId);
-
-  // console.log(cards);
-}
-
-async function handlePlayersTurn(roomId) {
-  // Handling Players Turn
-  let currentSeat = seats.filter(seat => seat.number === room.current_turn);
-
-  if (currentSeat.status !== 'Active' || currentSeat.status !== 'Finished') {
-    roomService.nextTurn(roomId);
-  }
-
-  // Handle finshed by player Standing
-
-
-  // If the player hit then the rooms status is calculating
-  if (room.current_action === 'Calculating') {
-    // Determine if player busted
-    // Bust set hand status to bust move to next player
-    // With the room Id get the cards in the hands of the seat the player is in
-
-    // const user =
-    // calculateHands(cards);
-    console.log("Calculating")
-    await calculateActiveHands(roomId);
-
-    room.isactive = false; // TEMP to pause game loop
-    // else set hand status to Awaitng Input
-  }
-
-
-  // roomService.updateAction(roomId, 'Awaiting Input');
-}
-
-async function playerHit(userId, seatId, handId) {
-  // only users playing can make actions
-  if (!userId || !seatId) {
-    return;
-  }
-  // Check db for whos turn it is and if action is being waited for.
-  const seat = await seatService.getSeat(seatId);
-  room = await seatService.getRoom(seatId);
-  const roomId = room.id;
-
-  if (userId !== seat.account_id || seat.number !== room.current_turn || room.current_action !== 'Awaiting Input') {
-    return;
-  }
-
-  // Give the player a card.
-  await cardService.dealCard(roomId, handId);
-
-  seats = await seatService.getSeats(roomId);
-  cards = await cardService.getCardsInHands(roomId);
-  socket.emit('notifySeatsHaveChanged', {
-    roomId: roomId,
-    seats: seats,
-  });
-
-  socket.emit('notifyCardsHaveChanged', {
-    roomId: roomId,
-    cards: cards,
-  });
-
-  await roomService.updateAction(roomId, 'Calculating');
-  // room.current_action = 'Calculating'
-
-}
-
-async function playerStand(userId, seatId) {
-  // only users playing can make actions
-  if (!userId || !seatId) {
-    console.log("Rjected")
-    return;
-  }
-  // Check db for whos turn it is and if action is being waited for.
-
-
-  console.log("Good");
-}
-
-async function calculateActiveHands(roomId) {
-  const cards = await cardService.getCurrentPlayersCards(roomId);
-  console.log("Cards found", cards)
-
-  let bustCount = 0;
-  const handIds = [...new Set(cards.map(card => card.hand_id))];
-
-  console.log("Here")
-  handIds.forEach((handId) => {
-    const handSum = cards.filter(card => card.hand_id === handId).reduce((sum, card) => sum + card.value, 0);
-    console.log(handSum);
-    if (handSum > 21) {
-      bustCount += 1;
-    }
-  });
-  console.log("Here2")
-  room.isactive = false; // TEMP to pause game loop
-  if (bustCount === handIds.length) {
-    // player is bust in all hands and cannot continue
+    // The current action is now moving the active seat to the next player.
     await roomService.updateAction(roomId, 'Moving');
-    roomService.nextTurn(roomId);
+  }
+  else if (room.current_action === 'Finished') {
+    // Calculate Winners and stuff
+    determineRoundResults(roomId);
+    console.log("Finished");
+    room.loop_status = 'Finished';
+    // await roomService.updateAction(roomId, 'Finished');
+  }
+
+  else {
+    console.log("Made it around the table")
+    room.current_action = 'Finished';
+    await roomService.updateAction(roomId, 'Finished');
+
+    if (room.loop_status === 'Finishing') {
+      console.log('Room is finishing')
+      // TODO: Clean up
+      room.loop_status = 'Inactive';
+      await roomService.updateStatus(room.id, 'Inactive');
+    }
+  }
+}
+
+async function handlePlayersTurn(roomId, seatId) {
+  // Wait for players turn. If the player doesnt make an action in time move to next players turn.
+  // If the timeout finishes and the current action is awaiting input and is still the same active seat then the player ran out of time and this loop continues
+  // If the seat Id is different or the action is not awaiting input then the player made an action and this loop ends. The game continues with another loop started by the action.
+  // setTimeout(await checkPlayersTurn(roomId, seatId), 10 * 1000);
+  return await new Promise((resolve, reject) => {
+    setTimeout(async () => {
+      console.log("Inside timeout");
+      await checkPlayersTurn(roomId, seatId)
+      resolve();
+    }, 5 * 1000);
+  });
+}
+
+async function checkPlayersTurn(roomId, seatId) {
+  console.log("Checking players turn");
+  await updateGameInfo(roomId);
+  if (room.current_action === 'Awaiting Input' && room.current_turn === seatId) {
+    console.log("Player LEFT.")
+    // Player ran out of time. No calculations should be necessary. Just move to next player.
+    await roomService.updateAction(roomId, 'Moving');
+    // Make player leave. Set to finished
+    await seatService.unassignAccount(seatId);
+
+    seats = await seatService.getSeats(roomId);
+    socket.emit('notifySeatsHaveChanged', {
+      roomId: roomId,
+      seats: seats,
+    });
   }
   else {
-    // player can continue
-    await roomService.updateAction(roomId, 'Awaiting Input');
+    // Player made an action. Kill this loop.
+    console.log("Player made decision.")
+    room.loop_status === 'Inactive';
   }
-
-  console.log('hand ids')
 }
 
-module.exports = {
-  playerJoined,
-  playerLeft,
+async function determineRoundResults(roomId) {
+  await updateGameInfo(roomId);
+  // Get dealers cards
+  // Compare sums to each of the players
+  // Dealer is greater player lost, dealer is less player won, dealer is equal player pushed
+  let cards = await cardService.getCardsInHands(roomId);
 
-  playerHit,
-  playerStand,
+  let results = [];
+
+  let dealersSum = 0;
+  const dealersHand = hands.find(hand => hand.seat_id === seats.find(seat => seat.number === 0).id);
+  const dealersCards = cards.filter(card => card.hand_id === dealersHand.id);
+  dealersCards.forEach(card => {
+    // Lower card values over 10 to 10. Why didn't I just make values of JQK all 10? No one knows.
+      if (card.value > 10) {
+        card.value = 10;
+      }
+
+      // Aces can be 1 or 11
+      if (card.value === 1) {
+        if (dealersSum + 11 > 21) {
+          card.value = 1;
+        }
+        else {
+          card.value = 11;
+        }
+      }
+      // add the card to the sum
+      dealersSum += card.value
+    });
+
+    // Bust
+    if (dealersSum > 21) {
+      dealersSum = 0;
+      // handResult = "Loss"
+    }
+
+    console.log('dealers sum', dealersSum);
+
+    hands.forEach(hand => {
+      if (hand.id !== dealersHand.id) { // Skip dealers hand
+        let playerSum = 0;
+
+        let playerCards = cards.filter(card => card.hand_id === hand.id);
+        playerCards.forEach(card => {
+          // Lower card values over 10 to 10. Why didn't I just make values of JQK all 10? No one knows.
+          if (card.value > 10) {
+            card.value = 10;
+          }
+
+          // Aces can be 1 or 11
+          if (card.value === 1) {
+            if (playerSum + 11 > 21) {
+              card.value = 1;
+            }
+            else {
+              card.value = 11;
+            }
+          }
+          // add the card to the sum
+          playerSum += card.value
+        });
+
+        const accountId = seats.find(seat => seat.id === hand.seat_id).account_id;
+        let result = {
+          seatId: hand.seat_id,
+          accountId: accountId,
+          sum: playerSum,
+          win: 0,
+          loss: 0,
+          push: 0,
+          blackjack: 0,
+          bust: 0,
+        };
+
+        // Bust
+        if (playerSum > 21) {
+          result.bust = true;
+          result.loss = 1;
+        }
+        // blackjack
+        if (playerSum === 21) {
+          result.blackjack = 1;
+        }
+        if (playerSum < 21) {
+          // compare to dealers sum
+          if (playerSum > dealersSum) {
+            result.win = 1;
+          }
+          if (playerSum === dealersSum) {
+            result.push = 1;
+          }
+          if (playerSum < dealersSum) {
+            result.loss = 1;
+          }
+        }
+        results.push(result);
+      }
+    })
+
+    // console.log("Results", results);
+    await accountService.recordResults(results);
+}
+
+
+module.exports = {
+  startLoop,
+  endLoop,
+  // playerJoined,
+  // playerLeft,
+
+  // playerHit,
+  // playerStand,
 }

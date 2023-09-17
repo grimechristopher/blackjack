@@ -40,23 +40,14 @@ async function createRoom() {
   }
 }
 
-async function activateRoom(roomId) {
-  console.log(`UPDATE room WHERE id = ${roomId} SET isactive = true;`)
+async function updateStatus(roomId, status) {
   try {
-    await pool.query(`UPDATE room SET isactive = true WHERE id = ${roomId};`);
+    await pool.query(`UPDATE room SET loop_status = '${status}' WHERE id = ${roomId};`);
   }
   catch (error) {
-    console.error("Error activating room", error);  }
-}
-
-async function deactivateRoom(roomId) {
-  try {
-    await pool.query(`UPDATE room SET isactive = false WHERE id = ${roomId};`);
+    console.error("Error activating room", error);
   }
-  catch (error) {
-    console.error("Error deactivating room", error);  }
 }
-
 
 async function deleteRoom(roomId) {
   try {
@@ -131,7 +122,7 @@ async function getPlayerRoom(userId) {
 async function getPlayers(roomId) {
   try {
     const fields = 'username';
-    console.log(`SELECT ${fields} FROM account WHERE room_id = ${roomId};`);
+    // console.log(`SELECT ${fields} FROM account WHERE room_id = ${roomId};`);
     const results = await pool.query(`SELECT ${fields} FROM account WHERE room_id = ${roomId};`);
     return results.rows;
   }
@@ -151,7 +142,6 @@ async function updateAction(roomId, action) {
 
 // What a mess. Simplify this.
 async function nextTurn(roomId) {
-  // let turn = 0;
   try {
     const room = await getRoom(roomId);
     const seats = await seatService.getSeats(roomId);
@@ -162,21 +152,26 @@ async function nextTurn(roomId) {
 
     // If room turn is null set to 0
     // If turn === last element.number in activeSeats set turn to 0;
+
+    // UPDATE THE DB so this check is not necessary NOT NULL and default 0
     if (room.current_turn === null || room.current_turn === activeSeats[activeSeats.length - 1].number ) {
       // turn = 0;
       return await pool.query(`UPDATE room SET current_turn = 0 WHERE id = ${roomId};`);
     }
 
+    // Strong suspicion that this can be done cleaner.
     let turn = room.current_turn;
-
     while (turn < activeSeats[activeSeats.length - 1].number) {
       turn += 1;
       if (activeSeats.find(seat => seat.number === turn)) {
         // break;
-        return await pool.query(`UPDATE room SET current_turn = ${turn} WHERE id = ${roomId};`);
+        await pool.query(`UPDATE room SET current_turn = ${turn} WHERE id = ${roomId};`);
+        return turn;
       }
     }
-    return await pool.query(`UPDATE room SET current_turn = 0 WHERE id = ${roomId};`);
+    await pool.query(`UPDATE room SET current_turn = 0 WHERE id = ${roomId};`);
+    return turn;
+
   }
   catch (error) {
     console.error("Error updating turn", error);
@@ -187,8 +182,9 @@ module.exports = {
   getRooms,
   getRoom,
   createRoom,
-  activateRoom,
-  deactivateRoom,
+  updateStatus,
+  // activateRoom,
+  // deactivateRoom,
   deleteRoom,
   assignAccount,
   unassignAccount,

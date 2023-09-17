@@ -6,7 +6,7 @@ CREATE TABLE seat
     number          INTEGER NOT NULL,
     account_id      INTEGER,
     account_id_next INTEGER,
-    status          INTEGER,
+    status          VARCHAR,
     FOREIGN KEY (room_id) REFERENCES room (id) ON DELETE CASCADE,
     FOREIGN KEY (account_id) REFERENCES account (id) ON DELETE SET NULL,
     FOREIGN KEY (account_id) REFERENCES account (id) ON DELETE SET NULL
