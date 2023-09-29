@@ -31,6 +31,18 @@ async function refreshHands(roomId) {
   }
 }
 
+async function addHand(seatId) {
+  try {
+      const {rows} = await pool.query(`INSERT INTO hand (seat_id) VALUES (${seatId}) returning id;`);
+      console.log(rows)
+      let handId = rows[0].id;
+      return handId;
+  }
+  catch (error) {
+    console.error("error adding hand", error);
+  }
+}
+
 async function assignAccount(seat) {
   // No players in dealers seat
   if (seat.number === 0) {
@@ -41,8 +53,10 @@ async function assignAccount(seat) {
   console.log("Assigned Player")
 }
 
-async function unassignAccount(seat) {
-  await pool.query(`UPDATE seat SET status = 'Finished' WHERE account_id = ${USER_ID};`); // User actually leaves all seats.
+async function unassignAccount(seatId) { //
+  console.log('seatId:', seatId);
+  const seat = await getSeat(seatId);
+  await pool.query(`UPDATE seat SET status = 'Finished' WHERE id = ${seatId};`);
   // When the seat the user was sitting in has no hands. dont bother moving to Finished just set account id and status to null
   // WTF THIS QUERY IS BROKEN
   // await pool.query(`UPDATE seat
@@ -53,11 +67,17 @@ async function unassignAccount(seat) {
   //                   AND seat.status = 'Finished'
   //                   AND h.id IS NULL;`
   // );
+  console.log(seat);
+  if (seat) {
+    return seat.account_id;
+  }
+  return null;
 }
 
 async function updateStatuses(roomId) {
+  console.log("Updated Seat Statues")
   try {
-    await pool.query(`UPDATE seat SET status = null, account_id = null WHERE status = 'Finished' OR number = 0;`);
+    await pool.query(`UPDATE seat SET status = null, account_id = null WHERE (status = 'Finished' OR number = 0) AND room_id = ${roomId};`);
     await pool.query(`UPDATE seat SET status = 'Active' WHERE status = 'Ready';`);
     return seats = await getSeats(roomId);
   }
@@ -80,6 +100,7 @@ async function getRoom(seatId) {
 
 async function getSeat(seatId) {
   try {
+    console.log(`SELECT * FROM seat WHERE id = ${seatId};`);
     const results = await pool.query(`SELECT * FROM seat WHERE id = ${seatId};`);
     return results.rows[0];
   }
@@ -104,6 +125,7 @@ module.exports = {
   getSeats,
   getHands,
   refreshHands,
+  addHand,
   assignAccount,
   unassignAccount,
   updateStatuses,

@@ -3,6 +3,8 @@ import { createStore } from 'vuex'
 // import { createMockPlayers } from '@/old_components/data/players';
 // import { getUserId } from '@/old_components/data/user';
 
+let timerInterval = null;
+
 export default createStore({
   state: {
     room: { // Want to move room stuff here
@@ -42,6 +44,11 @@ export default createStore({
         state.room.id = null;
         state.room.seats = null;
         state.room.players = null;
+        state.room.deckLength = null;
+
+        state.room.hands = [];
+        state.room.cards = [];
+        state.room.turn = 0;
       }
     },
 
@@ -62,8 +69,19 @@ export default createStore({
     UPDATE_Cards(state, data) {
       state.room.cards = data;
     },
-    UPDATE_Turn(state, data) {
-      state.room.turn = data;
+    UPDATE_Timer(state, data) {
+      state.room.timer = data.time;
+      state.room.turn = data.seatNumber;
+      clearInterval(timerInterval);
+
+      timerInterval = setInterval(() => {
+        if (state.room.timer > 0) {
+          state.room.timer -= 1;
+        } else {
+          clearInterval(timerInterval);
+        }
+      }, 1000)
+
     },
 
 
@@ -114,21 +132,9 @@ export default createStore({
       commit('UPDATE_Turn', data);
     },
 
-    // updateSeats({ commit }, {data}) {
-    //   commit('UPDATE_Seats', data);
-    // },
-
-
-
-    // joinRoom({ commit }, {data}) {
-    //   commit('UPDATE_Room', data);
-    // },
-    // leaveRoom({ commit }) {
-    //   commit('UPDATE_Room', null);
-    // },
-
-
-
-
+    updateTimer({ commit }, {data}) {
+      console.log("Timer", data)
+      commit('UPDATE_Timer', data);
+    },
   },
 })

@@ -15,6 +15,9 @@
             <div v-if="seat.account_id && seat.id == userSeatId">
                 <button @click="leave(seat)">Leave</button>
             </div>
+            <div v-if="currentTurn === seat.number">
+              <meter :value="timer" max="15" min="0">{{ timer }}</meter>
+            </div>
   </div>
 </template>
 
@@ -44,12 +47,26 @@ export default {
       }
       return null;
     },
+    timer() {
+      if (this.$store.state.room.timer && this.$store.state.room.turn) {
+        if (this.$store.state.room.turn === this.seat.number) {
+          return this.$store.state.room.timer;
+        }
+      }
+      return null;
+    },
+    currentTurn() {
+      if (this.$store.state.room.turn) {
+        return this.$store.state.room.turn;
+      }
+      return null;
+    },
   },
   methods: {
     async sit(seat) {
       socket.emit("take seat", seat);
     },
-    async leave(seat) {
+    async leave(seat) { // Needs to be validated server side
       socket.emit("leave seat", seat);
     },
   },

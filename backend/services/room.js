@@ -49,39 +49,21 @@ async function updateStatus(roomId, status) {
   }
 }
 
+async function updateRoundCount(roomId) {
+  try {
+    await pool.query(`UPDATE room SET round_count = round_count + 1 WHERE id = ${roomId};`);
+  }
+  catch (error) {
+    console.error("Error activating room", error);
+  }
+}
+
 async function deleteRoom(roomId) {
   try {
     await pool.query(`DELETE FROM room where id = ${roomId};`);
   }
   catch (error) {
     console.error("Error deleting room", error);  }
-}
-
-async function verifyIntegrity(roomId) {
-  // room should have correct number of cards and seats
-  const deckLength = await pool.query(`SELECT COUNT(*) FROM card WHERE room_id = ${roomId};`); // replace with Card Service?
-  const seatLength = await pool.query(`SELECT COUNT(*) FROM seat WHERE room_id = ${roomId};`);
-  if (deckLength.rows[0].count != DECKS * 52 || seatLength.rows[0].count != (SEATS + 1)) {
-    await repairRoom(roomId);
-    return true;
-  }
-  return false;
-}
-
-async function repairRoom(roomId) {
-  console.error('Room is broken. Repairing...');
-  // Delete any data that is there
-  try {
-    await pool.query(`DELETE FROM seat WHERE room_id = ${roomId};`);
-    await pool.query(`DELETE FROM card WHERE room_id = ${roomId};`);
-  }
-  catch (error) {
-    console.error('Error deleting seats and cards', error);
-  }
-  // Add cards and seats
-  await addDeck(roomId, DECKS);
-  await addSeats(roomId, SEATS);
-
 }
 
 async function addDeck(roomId, decks) {
@@ -122,7 +104,6 @@ async function getPlayerRoom(userId) {
 async function getPlayers(roomId) {
   try {
     const fields = 'username';
-    // console.log(`SELECT ${fields} FROM account WHERE room_id = ${roomId};`);
     const results = await pool.query(`SELECT ${fields} FROM account WHERE room_id = ${roomId};`);
     return results.rows;
   }
@@ -148,13 +129,8 @@ async function nextTurn(roomId) {
 
     const activeSeats = seats.filter(seat => seat.status === 'Active' || seat.status === 'Finished'); // assumed sorted by room number
 
-    console.log('update room turn', activeSeats)
-
-    // If room turn is null set to 0
     // If turn === last element.number in activeSeats set turn to 0;
-
-    // UPDATE THE DB so this check is not necessary NOT NULL and default 0
-    if (room.current_turn === null || room.current_turn === activeSeats[activeSeats.length - 1].number ) {
+    if (room.current_turn === activeSeats[activeSeats.length - 1].number ) {
       // turn = 0;
       return await pool.query(`UPDATE room SET current_turn = 0 WHERE id = ${roomId};`);
     }
@@ -164,7 +140,6 @@ async function nextTurn(roomId) {
     while (turn < activeSeats[activeSeats.length - 1].number) {
       turn += 1;
       if (activeSeats.find(seat => seat.number === turn)) {
-        // break;
         await pool.query(`UPDATE room SET current_turn = ${turn} WHERE id = ${roomId};`);
         return turn;
       }
@@ -183,8 +158,7 @@ module.exports = {
   getRoom,
   createRoom,
   updateStatus,
-  // activateRoom,
-  // deactivateRoom,
+  updateRoundCount,
   deleteRoom,
   assignAccount,
   unassignAccount,

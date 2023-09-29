@@ -1,11 +1,5 @@
-// import { reactive } from "vue";
-// import { io } from "socket.io-client";
 import io from 'socket.io-client'
 import store from './store/index.js';
-
-// export const state = reactive({
-//   connected: false,
-// });
 
 const URL = process.env.NODE_ENV === "production" ? window.location : "http://localhost:3001";
 
@@ -71,28 +65,15 @@ socket.on("seats updated", (data) => {
   store.dispatch('updateSeats', {data});
 });
 
-socket.on("turn updated", (data) => {
+socket.on("turn updated", (data) => { // need to implement this
   console.log("Indeed turn updated")
   store.dispatch('updateTurn', {data});
 });
 
-
-
-
-
-socket.on("left room", () => {
-  store.dispatch('leaveRoom');
+socket.on("delete room", () => {
+  store.dispatch('updateRoom', {});
 });
 
-socket.on("deleted room", () => {
-  store.dispatch('leaveRoom');
+socket.on("action updated", (data) => {
+  store.dispatch('updateTimer', {data});
 });
-
-// Seat
-
-// socket.on("assigned seat", (seatInfo) => {
-//   // state.connected = true;
-//   // store.dispatch('defineSamplePlayers');
-//   console.log("dplayer assigned seat", seatInfo);
-//   store.dispatch('updateSeat', seatInfo);
-// });

@@ -8,7 +8,7 @@ module.exports = async function(socket, io) {
 
   // On Connection check to see if player is active in room seat and handle if true
   /// get auth headers to get user Id then do rest of logic
-  const active = await seatService.getActiveSeat(USER_ID);
+  const active = await seatService.getActiveSeat(USER_ID); // revisit
 
   if (active) {
     await updateRoom(active.room_id, socket, io);
@@ -19,6 +19,12 @@ module.exports = async function(socket, io) {
   });
 
   socket.on('join room', async function (data) {
+    console.log("joined")
+    const roomId = await roomService.unassignAccount(USER_ID);
+    console.log("left room", roomId)
+    if (roomId) {
+      socket.leave('Room_' + roomId);
+    }
     await updateRoom(data.roomId, socket, io);
 
   });
@@ -27,12 +33,14 @@ module.exports = async function(socket, io) {
     const roomId = await roomService.unassignAccount(USER_ID);
     socket.leave('Room_' + roomId);
   });
-}
 
-// Nothing to handle here. This should be handled in the game manager
-// async function handleTableReset() {
-//   console.log('TODO: Handle table reset')
-// }
+  socket.on('delete room', async function (data) {
+    const roomId = await roomService.unassignAccount(USER_ID);
+    await roomService.deleteRoom(roomId);
+    io.to('Room_' + roomId).emit('delete room', {});
+    io.in('Room_' + roomId).socketsLeave('Room_' + roomId);
+  });
+}
 
 // This is too complex and needs to be broken down
 async function updateRoom(roomId, socket, io) {
@@ -50,11 +58,6 @@ async function updateRoom(roomId, socket, io) {
     const hands = await seatService.getHands(roomId);
     const cards = await cardService.getCardsInHands(roomId);
 
-    // Move logic to game manager?
-    // if (response.hasTableReset) {
-    //   handleTableReset(response.hasTableReset);
-    // }
-
     const roomInfo = {
       id: roomId,
       seats: seats,
@@ -64,7 +67,7 @@ async function updateRoom(roomId, socket, io) {
       hands: hands,
       cards: cards,
     }
-    // Give everyone in the room including the sender all the information about the room. ?
+    // Give everyone in the room including the sender all the information about the room.
     io.to('Room_' + roomId).emit('player joined room', roomInfo);
   }
   catch (error) {

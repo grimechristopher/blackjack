@@ -15,10 +15,10 @@ module.exports = function(socket, io) {
   });
 
   socket.on('leave seat', async function (data) {
-    await seatService.unassignAccount(data);
-    // let seats = await seatService.getSeats(data.room_id);
+    // gameManager.endLoop(USER_ID);
 
-    gameManager.endLoop(USER_ID);
+    await seatService.unassignAccount(data.id);
+    // let seats = await seatService.getSeats(data.room_id);
 
     socket.emit('left seat', null); // Tell client that they left their seat
     // io.to('Room_' + data.room_id).emit('player left seat', seats);
@@ -36,10 +36,14 @@ module.exports = function(socket, io) {
     io.to('Room_' + data.roomId).emit('cards updated', data.cards);
   });
 
-  socket.on('notifyTurnHasChanged', async function (data) {
-    io.to('Room_' + data.roomId).emit('turn updated', data.turn);
-  });
+  // socket.on('notifyTurnHasChanged', async function (data) {
+  //   io.to('Room_' + data.roomId).emit('turn updated', data.turn);
+  // });
 
+  socket.on('notifyActionTimerStarted', async function (data) {
+    console.log('notifyActionTimerStarted')
+    io.to('Room_' + data.roomId).emit('action updated', data);
+  });
 
   /// Actions
   // Game manager handles information sent to connected sockets
@@ -48,6 +52,16 @@ module.exports = function(socket, io) {
   });
 
   socket.on('player stand', async function (data) {
-    gameManager.playerStand(USER_ID, data.seatId);
+    console.log('player stand', data)
+    if (data.seatId) {
+      gameManager.playerStand(USER_ID, data.seatId);
+    }
+  });
+
+  socket.on('player split', async function (data) {
+    console.log('player split', data)
+    if (data.seatId) {
+      gameManager.playerSplit(USER_ID, data.seatId, data.handId);
+    }
   });
 }

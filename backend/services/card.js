@@ -86,6 +86,10 @@ async function dealCard(roomId, handId) {
   await pool.query(`UPDATE card SET hand_id = ${handId} WHERE id = ${card.id};`);
 }
 
+async function moveCard(cardId, handId) {
+  await pool.query(`UPDATE card SET hand_id = ${handId} WHERE id = ${cardId};`);
+}
+
 async function getCurrentPlayersCards(roomId) {
   try {
     const cards = await pool.query(`SELECT card.* FROM card JOIN hand ON card.hand_id = hand.id JOIN seat ON hand.seat_id = seat.id JOIN room ON room.current_turn = seat.number WHERE seat.room_id = ${roomId} AND seat.number = room.current_turn;`)
@@ -96,6 +100,10 @@ async function getCurrentPlayersCards(roomId) {
   }
 }
 
+async function returnCards(roomId) {
+  const deck = await getDeck(roomId);
+  await pool.query(`UPDATE card SET hand_id = null WHERE room_id = ${roomId};`);
+}
 
 
 module.exports = {
@@ -104,5 +112,7 @@ module.exports = {
   getCardsInHands,
   initialDeal,
   dealCard,
+  moveCard,
   getCurrentPlayersCards,
+  returnCards,
 }
