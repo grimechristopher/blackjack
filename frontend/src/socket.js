@@ -1,7 +1,13 @@
 import io from 'socket.io-client'
-import store from './store/index.js';
+import store from '@/store/index';
 
-const URL = process.env.NODE_ENV === "production" ? window.location : "http://localhost:3001";
+import seats from '@/data/seats';
+import players from '@/data/players';
+import hands from '@/data/hands';
+import cards from '@/data/cards';
+import player from '@/data/user';
+
+const URL = process.env.NODE_ENV === "production" ? window.location : "http://localhost:3000";
 
 export const socket = io(URL, {
   autoConnect: false,
@@ -12,68 +18,62 @@ export const socket = io(URL, {
 
 // Connection
 socket.on("connect", () => {
-  const data = {
-    isConnected: true,
-  }
-  store.dispatch('updateUserConnection', {data});
   console.log("connected");
 });
 
-socket.on("disconnect", () => {
-  const data = {
-    isConnected: false,
+socket.on("updateRoomList", (data) => {
+  store.dispatch('updateRoomList', data);
+});
+
+socket.on("userJoined Announcment", (data) => {
+  console.log('joined ROOM', data)
+});
+
+socket.on("updateGame", (data) => {
+  store.dispatch('updateRoom', data.room);
+  store.dispatch('updateSeats', data.seats);
+  store.dispatch('updateCards', data.cards);
+  store.dispatch('updateHands', data.hands);
+  // store.dispatch('updateAccounts', data.players);
+  console.log('updateGame', data);
+});
+
+
+
+
+export function joinRoom() {
+  console.log('joinRoom');
+  // mock room info
+  const room = {
+    id: 1000,
+    name: 'Room 1000',
+    activeSeat: null,
+    activeTurnTime: null,
   }
-  store.dispatch('updateUserConnection', {data});
-});
+  store.dispatch('updateRoom', room);
+  store.dispatch('updateUser', player);
+  store.dispatch('updateSeats', seats);
+  store.dispatch('updatePlayers', players);
+  store.dispatch('updateHands', hands);
+  store.dispatch('updateCards', cards);
+}
 
-// Room
-socket.on("joined room", (data) => {
-  store.dispatch('joinRoom', {data});
-});
+export function addCardToHand(handId) {
+  store.dispatch('addCardToHand', { handId } );
+}
 
-socket.on("player joined room", (data) => {
-  store.dispatch('updateRoom', {data});
-});
+export function setActiveTurn(seatId) {
+  store.dispatch('setActiveTurn', { seatId } );
+}
 
-// Seat
-socket.on("took seat", (data) => {
-  store.dispatch('updateUserSeat', {data});
-});
-socket.on("player took seat", (data) => {
-  store.dispatch('updateSeats', {data});
-});
+export function joinSeat(seatId) {
+  store.dispatch('sitPlayer', { seatId } );
+}
 
-socket.on("left seat", (data) => {
-  store.dispatch('updateUserSeat', {data}); // data should === null
-});
+export function leaveSeat(seatId) {
+  store.dispatch('leaveSeat', { seatId } );
+}
 
-socket.on("player left seat", (data) => {
-  store.dispatch('updateSeats', {data});
-});
-
-socket.on("hands updated", (data) => {
-  store.dispatch('updateHands', {data});
-});
-
-socket.on("cards updated", (data) => {
-  console.log("Indeed cards updated")
-  store.dispatch('updateCards', {data});
-});
-
-socket.on("seats updated", (data) => {
-  console.log("Indeed seats updated")
-  store.dispatch('updateSeats', {data});
-});
-
-socket.on("turn updated", (data) => { // need to implement this
-  console.log("Indeed turn updated")
-  store.dispatch('updateTurn', {data});
-});
-
-socket.on("delete room", () => {
-  store.dispatch('updateRoom', {});
-});
-
-socket.on("action updated", (data) => {
-  store.dispatch('updateTimer', {data});
-});
+export function splitHand(handId) {
+  store.dispatch('splitHand', { handId } );
+}

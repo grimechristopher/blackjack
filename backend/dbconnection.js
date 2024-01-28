@@ -1,10 +1,10 @@
-const { Pool, Client } = require('pg');
+const { Pool } = require('pg');
 
 const credentials = {
   user: 'postgres',
   host: 'localhost',
   database: 'cards',
-  password: '',
+  password: process.env.DB_PASSWORD,
   port: 5432,
 }
 

@@ -1,39 +1,57 @@
 <template>
-  <div>
-    <RoomsList />
-    <GameRoom />
-    <GameControls />
-    <Debug />
-  </div>
+  <NavigationBar/>
+  <router-view></router-view>
 </template>
 
 <script>
-import { socket } from "@/socket";
-import RoomsList from "@/components/RoomsList.vue"
-import GameRoom from "@/components/GameRoom.vue"
-import GameControls from "@/components/GameControls.vue"
-import Debug from "@/components/Debug.vue"
+import NavigationBar from './components/Layout/NavigationBar.vue'
+import { socket } from './socket';
+
+import { useStore } from 'vuex';
 
 export default {
   name: 'App',
   components: {
-    RoomsList,
-    GameRoom,
-    GameControls,
-    Debug,
+    NavigationBar,
   },
-  created: async function () {
+  data() {
+    return {
+      showRoomList: false
+    }
+  },
+  created() {
+    const store = useStore();
+    store.commit('initializeStore');
+    store.subscribe((mutation, state) => {
+      localStorage.setItem('store', JSON.stringify(state));
+    });
+  },  
+  mounted() {
     socket.connect();
+    // joinRoom();
   },
+  methods: {
+    
+  }
 }
 </script>
 
 <style>
-#app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
+* {
+  box-sizing: border-box;
 }
+
+body {
+  margin: 0;
+  background: black;
+}
+
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+}
+
 </style>

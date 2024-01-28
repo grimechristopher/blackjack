@@ -1,76 +1,48 @@
-const roomService = require('../services/room.js');
-const seatService = require('../services/seat.js');
-const cardService = require('../services/card.js');
+const db = require('../models/room.js');
+const gsm = require('../gamestate/entryPoints.js');
 
-const USER_ID = 1;
+const seatModel = require('../models/seat.js');
+
+function unassignAccount() {
+  console.log('unassignAccount');
+  
+}
+
+function assignAccount() {
+  console.log('assignAccount');
+}
 
 module.exports = async function(socket, io) {
-
-  // On Connection check to see if player is active in room seat and handle if true
-  /// get auth headers to get user Id then do rest of logic
-  const active = await seatService.getActiveSeat(USER_ID); // revisit
-
-  if (active) {
-    await updateRoom(active.room_id, socket, io);
-  }
-
-  socket.on('connection', async function () {
-    console.log("user conenectf and handlign in room sockjet")
+  io.use((socket, next) => {
+    console.log('socket.io middleware')
+    // const { token } = socket.handshake.auth;
+    // if (token !== "Test") {
+    //   return next(new Error("authentication error"));
+    // }
+    next();
   });
 
-  socket.on('join room', async function (data) {
-    console.log("joined")
-    const roomId = await roomService.unassignAccount(USER_ID);
-    console.log("left room", roomId)
-    if (roomId) {
-      socket.leave('Room_' + roomId);
-    }
-    await updateRoom(data.roomId, socket, io);
-
+  socket.on('getRoomList', async function () {
+    const roomList = await db.findAllRooms();
+    socket.emit('updateRoomList', roomList);
   });
 
-  socket.on('leave room', async function (data) {
-    const roomId = await roomService.unassignAccount(USER_ID);
-    socket.leave('Room_' + roomId);
+  socket.on('joinRoom', async function (data) {
+    // TODO: Get id of player from token
+    // User enters the room as a spectator
+    const room = await db.findRoom(data.roomId);
+    // Leave all other rooms so that user is not updated with those events
+    socket.rooms.forEach(room => {if (room !== socket.id) {socket.leave(room);}});
+    // Join the room socket
+    socket.join(room.name);
+    // Notify sockets that a new spectator has joined
+    socket.broadcast.to(room.name).emit('userJoined Announcment', `Spectator has joined ${room.name}`);
+    // Game state manager needs to handle a player joining the room.
+    await gsm.playerJoinedRoom(null, data.roomId);
   });
 
-  socket.on('delete room', async function (data) {
-    const roomId = await roomService.unassignAccount(USER_ID);
-    await roomService.deleteRoom(roomId);
-    io.to('Room_' + roomId).emit('delete room', {});
-    io.in('Room_' + roomId).socketsLeave('Room_' + roomId);
+  socket.on('assign seat', async function (data) {
+    const accountId = 1; // Get account id from token
+    seatModel.assignAccountToSeat(accountId, data.seatId);
   });
-}
-
-// This is too complex and needs to be broken down
-async function updateRoom(roomId, socket, io) {
-  try {
-    await roomService.unassignAccount(USER_ID);
-    socket.leave('Room_' + roomId);
-    // Join new room
-    socket.join('Room_' + roomId);
-
-    await roomService.assignAccount(roomId, USER_ID);
-    const players = await roomService.getPlayers(roomId);
-    const seats = await seatService.getSeats(roomId);
-    const userSeat = seats.find(seat => seat.account_id === USER_ID && seat.status === 'Ready'); // Will need to update for the multiple different statuses
-    const deckLength = await cardService.getRemainingDeckLength(roomId);
-    const hands = await seatService.getHands(roomId);
-    const cards = await cardService.getCardsInHands(roomId);
-
-    const roomInfo = {
-      id: roomId,
-      seats: seats,
-      players: players,
-      userSeatId: userSeat ? userSeat.id : null,
-      deckLength: deckLength,
-      hands: hands,
-      cards: cards,
-    }
-    // Give everyone in the room including the sender all the information about the room.
-    io.to('Room_' + roomId).emit('player joined room', roomInfo);
-  }
-  catch (error) {
-    console.log(error);
-  }
-}
+};

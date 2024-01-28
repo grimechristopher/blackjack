@@ -1,140 +1,167 @@
 import { createStore } from 'vuex'
-// import { generateDecks } from '@/old_components/data/deck';
-// import { createMockPlayers } from '@/old_components/data/players';
-// import { getUserId } from '@/old_components/data/user';
 
-let timerInterval = null;
+// The entire apps open data will be kept in the store
+// There will be data for the active game.
 
 export default createStore({
   state: {
-    room: { // Want to move room stuff here
+    // The game will have multiple rooms at once 
+    rooms: [],
+    // Seats will be an array of the current room's seats
+    seats: [],
+    // Each active player has a hand, hands are generated as soon as a round starts
+    hands: [],
+    // All the cards assigned to this room
+    cards: [],
+    // Object containing data about the current room
+    room: {
       id: null,
+      name: '',
+      activeSeat: null,
+      activeTurnTime: null,
+    },
+    dealer: {
 
-
-      deckLength: 0,
     },
     user: {
-      // seat: null,
-      isConnected: false,
-      seatId: null,
-    },
-  },
-  mutations: {
-    // Connection
-    UPDATE_User(state, data) {
-      state.user.isConnected = data.isConnected;
-    },
-    UPDATE_Room(state, data) {
-      console.log(data);
-      if (data) {
-        console.log(data);
-        state.room.id = data.id;
-        state.room.seats = data.seats;
-        state.room.players = data.players;
-        state.room.deckLength = data.deckLength;
-
-        state.room.hands = data.hands;
-        state.room.cards = data.cards;
-        state.room.turn = 0;
-
-        // check if the user is sitting at a seat in the room already.
-        state.user.seatId = data.userSeatId;
-      }
-      else {
-        state.room.id = null;
-        state.room.seats = null;
-        state.room.players = null;
-        state.room.deckLength = null;
-
-        state.room.hands = [];
-        state.room.cards = [];
-        state.room.turn = 0;
-      }
-    },
-
-    UPDATE_UserSeat(state, data) {
-      console.log(data);
-      state.user.seatId = data;
-    },
-    UPDATE_Seats(state, data) {
-      console.log("Updating Seats in store")
-      if (data.find(seat => seat.id === state.user.seatId && seat.status === 'Finished') ) {
-        state.user.seatId = null;
-      }
-      state.room.seats = data;
-    },
-    UPDATE_Hands(state, data) {
-      state.room.hands = data;
-    },
-    UPDATE_Cards(state, data) {
-      state.room.cards = data;
-    },
-    UPDATE_Timer(state, data) {
-      state.room.timer = data.time;
-      state.room.turn = data.seatNumber;
-      clearInterval(timerInterval);
-
-      timerInterval = setInterval(() => {
-        if (state.room.timer > 0) {
-          state.room.timer -= 1;
-        } else {
-          clearInterval(timerInterval);
-        }
-      }, 1000)
 
     },
 
-
-
-
-    UPDATE_ActiveRoomSeat(state, data) {
-      console.log(data);
-      state.user.seat = state.activeSeats.find(seat => seat.id === data.seatId);
-      state.activePlayers = data.activePlayers;
-      const oldIndex = state.activeSeats.findIndex(seat => seat.account_id === data.accountId);
-      const index = state.activeSeats.findIndex(seat => seat.id === data.seatId);
-      if (oldIndex !== -1) {
-        state.activeSeats[oldIndex].account_id = null;
-      }
-      state.activeSeats[index].account_id = data.accountId;
-      console.log(state.activeSeats)
-    },
+    // cards: suit, value, hand, room
+    // hands: seat
+    // seat: room, player, number, next player, status
+    // -- seat can have status. ready, playing, leaving
+    // room: name
+    
   },
   actions: {
-    // Connection
-    updateUserConnection({ commit }, {data}) {
-      commit('UPDATE_User', data);
+    updateRoomList({ commit }, data ) {
+      commit('UPDATE_RoomList', data);
     },
 
-    // Rooms
-    updateRoom({ commit }, {data}) {
+
+    updateRoom({ commit } , data ) { 
       commit('UPDATE_Room', data);
     },
-
-    updateUserSeat({ commit }, {data}) {
-      commit('UPDATE_UserSeat', data);
+    updateUser({ commit }, data ) {
+      console.log("UPDATEING USER", data)
+      commit('UPDATE_User', data);
     },
-
-    updateSeats({ commit }, {data}) {
+    updateSeats({ commit }, data ) {
       commit('UPDATE_Seats', data);
     },
-
-    updateHands({ commit }, {data}) {
-      console.log("Oh Wow heres the hands", data)
+    updatePlayers({ commit }, data ) {
+      commit('UPDATE_Players', data);
+    },
+    updateHands({ commit }, data ) {
       commit('UPDATE_Hands', data);
     },
-
-    updateCards({ commit }, {data}) {
+    updateCards({ commit }, data ) {
+      console.log("updateCards", data)
       commit('UPDATE_Cards', data);
     },
-
-    updateTurn({ commit }, {data}) {
-      commit('UPDATE_Turn', data);
+    addCardToHand({ commit }, data ) {
+      commit('addCardToHand', data);
+    },
+    setActiveTurn({ commit }, data ) {
+      commit('setActiveTurn', data);
     },
 
-    updateTimer({ commit }, {data}) {
-      console.log("Timer", data)
-      commit('UPDATE_Timer', data);
+    sitPlayer({ commit }, data ) {
+      commit('assignPlayerToSeat', data);
     },
+    leaveSeat({ commit }, data ) {
+      commit('unnasignPlayerFromSeat', data);
+    },
+    splitHand({ commit }, data ) {
+      commit('splitHand', data);
+    }
+  },
+  mutations: {
+    initializeStore(state) {
+			if(localStorage.getItem('store')) {
+				// Replace the state object with the stored item
+				this.replaceState(
+					Object.assign(state, JSON.parse(localStorage.getItem('store')))
+				);
+			}
+    },
+    UPDATE_RoomList(state, data) {
+      console.log("UPDATE_RoomList", data)
+      state.rooms = data;
+    },
+
+    UPDATE_Seats(state, data) {
+      state.seats = data;
+    },
+    UPDATE_User(state, data) {
+      state.user = data;
+    },
+    UPDATE_Room(state, data) {
+      state.room = data;
+    },
+    UPDATE_Players(state, data) {
+      state.players = data;
+    },
+    UPDATE_Hands(state, data) {
+      state.hands = data;
+    },
+    UPDATE_Cards(state, data) {
+      state.cards = data;
+    },
+    addCardToHand(state, data) {
+      const undeltCards = state.cards.filter(card => card.handId === null);
+      let randomCard = undeltCards[(Math.floor(Math.random() * undeltCards.length))];
+      const cardIndex = state.cards.findIndex(card => card.id === randomCard.id);
+      state.cards[cardIndex].handId = data.handId;
+    },
+    setActiveTurn(state, data) {
+      state.room.activeSeat = data.seatId;
+      state.room.activeTurnTime = 30;
+
+      // Remove this in the future when handled by game state... 
+      setTimeout(() => {
+        state.room.activeSeat = null;
+        state.room.activeTurnTime = null;
+        clearInterval(activeTurnInterval);
+      }, 30 * 1000);
+
+      let activeTurnInterval = setInterval(() => {
+        state.room.activeTurnTime -= 1;
+      }, 1000);
+    },
+    assignPlayerToSeat(state, data) {
+      const seatIndex = state.seats.findIndex(seat => seat.id === data.seatId);
+      state.seats[seatIndex].playerId = state.user.id;
+      state.players.push(state.user)
+      state.user.seat = data.seatId;
+    },
+    unnasignPlayerFromSeat(state, data) {
+      if (state.user.seat !== data.seatId) {
+        return;
+      }
+      const seatIndex = state.seats.findIndex(seat => seat.id === data.seatId);
+      state.seats[seatIndex].playerId = null;
+      state.players = state.players.filter(player => player.id !== state.user.id);
+      state.user.seat = null;
+    },
+    splitHand(state, data) {
+      // Get hands seat
+      const handIndex = state.hands.findIndex(hand => hand.id === data.handId);
+      const hand = state.hands[handIndex];
+      // Add new hand and assign to seat
+      let newHand = { 
+        id: state.hands.length + 12344,
+        seat: hand.seat,
+      }
+      state.hands.push(newHand)
+      // Get cards in hand
+      const cardsInHand = state.cards.filter(card => card.handId === data.handId);
+      // Move second card to new hand
+      const secondCardIndex = state.cards.findIndex(card => card.id === cardsInHand[1].id);
+      state.cards[secondCardIndex].handId = newHand.id;
+      // Done.
+    }
+
   },
 })

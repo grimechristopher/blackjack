@@ -1,0 +1,65 @@
+export default [
+  {
+    id: 33,
+    room: 1,
+    player: null,
+    number: 0, // The community/dealer cards are in seat 0
+    nextPlayerId: null,
+  },
+  {
+    id: 1,
+    roomId: 1,
+    playerId: 1,
+    number: 1,
+    nextPlayerId: null,
+  },
+  {
+    id: 2,
+    roomId: 1,
+    playerId: null,
+    number: 2,
+    next: null,
+  },
+  {
+    id: 3,
+    roomId: 1,
+    playerId: 2,
+    number: 3,
+    nextPlayerId: null,
+  },
+  {
+    id: 4,
+    roomId: 1,
+    playerId: 2,
+    number: 4,
+    nextPlayerId: null,
+  },
+  {
+    id: 5,
+    roomId: 1,
+    playerId: 3,
+    number: 5,
+    nextPlayerId: null,
+  },
+  {
+    id: 6,
+    roomId: 1,
+    player: null,
+    number: 6,
+    nextPlayerId: null,
+  },
+  {
+    id: 7,
+    roomId: 1,
+    playerId: null,
+    number: 7,
+    nextPlayerId: null,
+  },
+  // { // I want to make sure we can fit 8 players
+  //   id: 8,
+  //   roomId: 1,
+  //   playerId: null,
+  //   number: 8,
+  //   nextPlayerId: null,
+  // },
+]

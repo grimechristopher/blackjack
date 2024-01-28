@@ -1,18 +1,17 @@
 {
-  "name": "supersampleapp",
+  "name": "frontend",
   "version": "0.1.0",
   "private": true,
   "scripts": {
     "serve": "vue-cli-service serve",
-    "dev": "concurrently \"vue-cli-service serve\" \"cd ../backend && npm run start\"",
     "build": "vue-cli-service build",
     "lint": "vue-cli-service lint"
   },
   "dependencies": {
-    "concurrently": "^8.2.1",
     "core-js": "^3.8.3",
-    "socket.io-client": "^4.7.1",
+    "socket.io-client": "^4.7.4",
     "vue": "^3.2.13",
+    "vue-router": "^4.2.5",
     "vuex": "^4.1.0"
   },
   "devDependencies": {
@@ -34,8 +33,7 @@
       "eslint:recommended"
     ],
     "parserOptions": {
-      "parser": "@babel/eslint-parser",
-      "requireConfigFile": false
+      "parser": "@babel/eslint-parser"
     },
     "rules": {}
   },

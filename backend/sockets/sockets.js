@@ -1,6 +1,5 @@
 // import gameManager from '../gameStateManager.js';
-const gameManager = require('../gameStateManager.js');
-
+// const gameManager = require('../gameStateManager.js');
 module.exports = {
   io: (server) => {
     const { Server } = require("socket.io");
@@ -10,22 +9,43 @@ module.exports = {
       }
     });
 
+    io.use((socket, next) => {
+      console.log('socket.io middleware')
+      // const { token } = socket.handshake.auth;
+      // if (token !== "Test") {
+      //   return next(new Error("authentication error"));
+      // }
+      next();
+    });
+
+
     io.on('connection', async (socket) => { //async correct?
       console.log('a new user connected');
 
-      // Authentication
-      const { token } = socket.handshake.auth;
-      console.log(token);
+      // // Authentication
+      // const { token } = socket.handshake.auth;
+      // console.log(token);
 
-      // import specific functionality
-      await require('./room.js')(socket, io); // await correct?
-      require('./seat.js')(socket, io);
+      // // import specific functionality
+      require('./authentication.js')(socket, io);
+      require('./room.js')(socket, io);
+      require('./game.js')(socket, io);
+      // require('./seat.js')(socket, io);
 
-      // On disconnect
+      // // On disconnect
+      // socket.on('disconnect', () => {
+      //   console.log('user disconnected');
+
+      // })
       socket.on('disconnect', () => {
         console.log('user disconnected');
+      });
+  
+      // socket.on('register', (data) => {
+      //   console.log('register', data);
+      // });
 
-      })
     });
+
   },
 }

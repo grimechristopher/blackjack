@@ -1,4 +1,4 @@
-# cardapp
+# frontend
 
 ## Project setup
 ```
