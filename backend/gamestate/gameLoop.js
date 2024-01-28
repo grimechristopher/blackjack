@@ -15,7 +15,6 @@ async function start(roomId) {
   await seatModel.setSeatsStatus(data[roomId].room.id, 'Active');
 
   while (data[roomId].room.status === 'Active') {
-    // console.log('\n\n\n\n\n\n\n\n\n\n\n\n ACTIVE TABLE')
    /// //// //// /// GAME LOOP
     // Remove all hands in room through seats
     // Create a hand for each seat
@@ -33,12 +32,12 @@ async function start(roomId) {
       else {
         await handlePlayerTurn(seat.id);
       }
-      // await handModel.moveTurnToNextPlayer(seat.id);
-      // await broadcaster.updateGameDataObjects(data[roomId].room.id);
     }
-  
     // Dealers Turn
-  
+    const dealerSeat = data[roomId].seats.filter(seat => seat.number === 0)[0];
+    await handleDealersTurn(roomId, dealerSeat.id);
+    await determineWinners(roomId);
+
     // /// ///// //////  End loop
     await debugEndLoop(roomId)
   }
@@ -83,14 +82,31 @@ async function handlePlayerTurn(seatId) {
   console.log("Player turn", seatId);
 }
 
+async function handleDealersTurn(roomId, seatId) {
+  await botAi.handleDealersTurn(roomId, seatId)
+}
+
+async function determineWinners(roomId) {
+  // Wait 3 seconds
+  await new Promise(resolve => setTimeout(resolve, 3000));
+  // Loop through hands, compare to dealer, record win or loss.
+  const seats = data[roomId].seats.filter(seat => seat.number === 0 || seat.account_active_id !== null);
+  // for (let seat of seats) {
+  //   // Get hands in seat
+  //   const hands = data[roomId].hands.filter(hand => hand.seat_id === seat.id);
+  //   for (let hand of hands) {
+  //     // botAi.compareFinalValue(roomId, hand.id)
+  //   }
+  // }
+
+
+
+};
 
 async function debugEndLoop(roomId) {
   // If theres still sockets spectating then continue the loop. If not then end the loop
   try {
     let socketsCount = await broadcaster.requestConnectedClientsCount(data[roomId].room.name);
-    console.log(socketsCount)
-    // const sockets = await broadcaster.socket.in(data[roomId].room.id).fetchSockets();
-    // const socketIds = sockets.map(socket => socket.id);
     if (socketsCount > 0) {
       console.info(`${data[roomId].room.name}: DEBUG There are still sockets spectating. Continuing the game loop`);
       return;

@@ -13,7 +13,8 @@ export const socket = io(URL, {
   autoConnect: false,
   auth: {
     token: "Test"
-  }
+  },
+  withCredentials: true,
 });
 
 // Connection
@@ -26,7 +27,7 @@ socket.on("updateRoomList", (data) => {
 });
 
 socket.on("userJoined Announcment", (data) => {
-  console.log('joined ROOM', data)
+  console.info('joined ROOM', data)
 });
 
 socket.on("updateGame", (data) => {
@@ -35,14 +36,12 @@ socket.on("updateGame", (data) => {
   store.dispatch('updateCards', data.cards);
   store.dispatch('updateHands', data.hands);
   // store.dispatch('updateAccounts', data.players);
-  console.log('updateGame', data);
 });
 
 
 
-
+// Will be able to remove once app is complete
 export function joinRoom() {
-  console.log('joinRoom');
   // mock room info
   const room = {
     id: 1000,

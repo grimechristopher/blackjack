@@ -14,7 +14,6 @@ async function findRoom(roomId) {
 }
 
 async function setRoomStatus(roomId, status){
-  console.log("Updating room status to", status, "for room", roomId)
   let query = `UPDATE room SET status = $1 WHERE id = $2`;
   let values = [status, roomId];
   await pool.query(query, values);

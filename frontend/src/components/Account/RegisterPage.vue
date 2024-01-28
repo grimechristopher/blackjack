@@ -32,8 +32,6 @@ const password = ref('');
 const errorMessage = ref('');
 
 async function register() {
-  console.log('register', username.value, email.value, password.value);
-
   let response = await fetch('http://localhost:3000/api/auth/register', {
     method: 'POST',
     headers: {
@@ -46,9 +44,7 @@ async function register() {
     })
   })
 
-  console.log('response', response.status);
   if (response.status === 200) {
-    console.log('success');
     errorMessage.value = '';
   } else {
     errorMessage.value = await response.text();

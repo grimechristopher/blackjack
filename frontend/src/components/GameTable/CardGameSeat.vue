@@ -84,18 +84,12 @@ function isActiveSeat() {
 }
 
 function takeSeat() {
-  console.log('takeSeat', store.state.user)
   if (!store.state.user.username) {
     router.push({ name: 'LoginPage', query: { 'room-redirect': store.state.room.id } });
   }
   else {
-    // joinSeat(props.seat.id);
-    console.log("WUT")
     socket.emit('assign seat', { seatId: props.seat.id });
-    // assignSeat(props.seat.id);
   }
-
-  // joinSeat(props.seat.id);
 }
 
 function removeFromSeat() {

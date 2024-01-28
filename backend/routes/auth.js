@@ -24,8 +24,6 @@ authRouter.post('/login/', async (request, response, next) => {
     // Get the relevant account from the database and compare that password to the password in the request body
     const record = await db.findByEmail(account.email);
 
-    console.log("record", record)
-
     if (!record) {
       return response.status(404).send('Account could not be logged in');
     }
@@ -45,7 +43,6 @@ authRouter.post('/login/', async (request, response, next) => {
     // Password is verified. Create a JWT with the account data
     const token = jwt.sign(record, process.env.JWT_SECRET, {expiresIn: 3600 * 24});
     // Store the JWT in a cookie
-
     const cookieOptions = {
       expires: new Date(Date.now() + 3600 * 24 * 1000), // ms not s 
       secure: process.env.ENVIRONMENT === "Local" ? false : true, 
@@ -60,12 +57,12 @@ authRouter.post('/login/', async (request, response, next) => {
       email: record.email,
       isLoggedIn: true,
     }
+
     return response.status(200).cookie('jwt-auth', token, cookieOptions).json(recordResponse);
 });
 
 authRouter.post('/register/', async (request,response, next) => {
   const account = request.body;
-  console.log("register", account)
   try {
     // Require username in the request body
     if (!account?.username) {
@@ -94,7 +91,6 @@ authRouter.post('/register/', async (request,response, next) => {
     }
     
     // Create the account with the data in the request
-    console.log("HERe")
     await db.createAccount(
       { 
         username: account.username, 
@@ -111,12 +107,10 @@ authRouter.post('/register/', async (request,response, next) => {
 
 authRouter.get('/test-public/', (request,response) => {
   console.log("test public")
-  // accountController.testPublicRequest(request, response)
 });
 
 authRouter.get('/test-private/', verifyAuth, (request,response) => {
   console.log("test private")
-  // accountController.testPrivateRequest(request, response)
 });
 
 

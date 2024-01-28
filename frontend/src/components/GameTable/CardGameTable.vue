@@ -60,9 +60,7 @@ const room = ref(null);
 // After the store is updated the frontend needs to display the seats
 onMounted(() => {
   window.addEventListener("resize", resizeCardGameTable);
-
   socket.emit('joinRoom', { roomId: route.params.roomId });
-
   setSeats();
 })
 
@@ -73,7 +71,6 @@ watch( () => store.state.seats, () => {
 // A function is used to set the seats to create two rows of seats and also seperate the community seat from the player seats.
 // Assumption: The seats in the store dont change after the room is created or midgame.
 function setSeats() {
-  console.log(store.state.seats)
   playerSeatsAll.value = store.state.seats.filter(seat => seat.number !== 0); // copy the seats from the store, excluding the community seat
   communitySeat.value = store.state.seats.filter(seat => seat.number === 0); // copy the community seat from the store
 

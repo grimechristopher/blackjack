@@ -17,8 +17,6 @@ const route = useRoute();
 const room = ref(null);
 
 watch(() => route.params, () => {
-  // console.log(store.state.rooms)
-  // console.log(room, route.params.roomId);
   updateRoomTitle();
 
 }, { immediate: true })

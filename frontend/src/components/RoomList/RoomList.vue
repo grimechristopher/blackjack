@@ -28,7 +28,6 @@ socket.emit('getRoomList');
 const roomList = ref([]);
 
 watch( () => store.state, () => {
-  console.log('roomList', store.state.rooms);
   roomList.value = store.state.rooms;
 }, { immediate: true, deep: true})
 

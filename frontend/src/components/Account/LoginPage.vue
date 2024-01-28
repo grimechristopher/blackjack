@@ -21,6 +21,7 @@
 import store from '@/store';
 import { ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { socket } from '@/socket';
 
 const route = useRoute();
 const router = useRouter();
@@ -31,6 +32,7 @@ const errorMessage = ref('');
 
 async function loginUser() {
   let response = await fetch('http://localhost:3000/api/auth/login', {
+    credentials: "include",
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
@@ -42,12 +44,13 @@ async function loginUser() {
   })
 
   if (response.status === 200) {
-    console.log('success');
-    // console.log(await response.json());
-    store.dispatch('updateUser', await response.json());
+    const userInfo = await response.json();
+    store.dispatch('updateUser', userInfo);
     errorMessage.value = '';
 
-    console.log(route.query)
+    socket.io.engine.close() // Reconnect to the socket server so socket io loads the new user info cookie
+
+    // Redirect to the room if the user was redirected to the login page
     if (route.query['room-redirect'] ) {
       router.push({ name: 'CardGameTable', params: { roomId: route.query['room-redirect'] }})
     }

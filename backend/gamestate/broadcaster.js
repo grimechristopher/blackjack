@@ -8,20 +8,16 @@ const socket = io.connect('http://localhost:3000', {
 });
 
 socket.on('connect', function (socket) {
-  console.log('Server connected to the server! wow');
-});
-
-socket.on('update connected clients count', function (data){
-  console.log('update count', data);
+  console.info('Socket broadaster is connected to the server');
 });
 
 let connectedClientsInRoomCount = 0;
 
 async function updateGameDataObjects(roomId) {
   if (!data[roomId]) {
-    await createRoom(roomId);
+    await createRoom(roomId); // Creates a new room in data object if one doesn't exist
   }
-  console.log(data);
+  // Update all information about the room and tell the socket clients in the room
   const roomResults = await pool.query('SELECT * FROM room WHERE id = $1', [roomId]);
   data[roomId].room = roomResults.rows[0];
   // Get cards in room
@@ -47,16 +43,10 @@ async function updateGameDataObjects(roomId) {
 }
 
 async function requestConnectedClientsCount(roomId) {
-  console.log("Inside requestConnectedClientsCount")
-  // let count = await new Promise((resolve) => {
-    let count = await new Promise(resolve => socket.emit('request connected clients count', {
-      roomId: roomId,
-    }, (response) => resolve(connectedClientsInRoomCount = response)))
-  //   socket.emit('request connected clients count', {
-  //     roomId: roomId,
-  //   }, (response) => { connectedClientsInRoomCount = response });
-  // // }, resolve => resolve(response));
-  console.log('count', connectedClientsInRoomCount, count);
+  // Determine number of clients connected to the room. Used to determine if the room is empty of spectators
+  await new Promise(resolve => socket.emit('request connected clients count', {
+    roomId: roomId,
+  }, (response) => resolve(connectedClientsInRoomCount = response)))
   return connectedClientsInRoomCount;
 }
 

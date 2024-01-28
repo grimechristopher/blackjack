@@ -36,7 +36,6 @@ const selectedHand = ref(null);
 
 setDeckLength();
 function setDeckLength() {
-  console.log('setDeckLength')
   deckLength.value = store.state.cards.filter(card => card.hand_id === null).length;
 }
 watch (store.state, () => {

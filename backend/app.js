@@ -11,6 +11,10 @@ app.use(express.json());
 const cors = require("cors");
 app.use(cors());
 
+// Middleware to parse cookies
+const cookieParser = require('cookie-parser');
+app.use(cookieParser());
+
 // Import routes
 const authRouter = require('./routes/auth.js');
 // const roomRouter = require('./routes/room.js');

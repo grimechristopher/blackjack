@@ -28,7 +28,6 @@ watch (store.state, () => {
 }, {deep: true});
 function setCards() {
   cards.value = store.state.cards.filter(card => card.hand_id === props.hand.id);
-  console.log(cards.value);
 }
 
 function split() {
