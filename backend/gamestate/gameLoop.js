@@ -5,6 +5,7 @@ const botAi = require('./botAi.js');
 const roomModel = require('../models/room.js');
 const seatModel = require('../models/seat.js');
 const handModel = require('../models/hand.js');
+const accountModel = require('../models/account.js');
 
 async function start(roomId) {
   console.info(`${data[roomId].room.name}: Starting a new game loop` );
@@ -14,38 +15,45 @@ async function start(roomId) {
   // Set the rooms taken seats to active 
   await seatModel.setSeatsStatus(data[roomId].room.id, 'Active');
 
+  let currentTurn = 0;
   while (data[roomId].room.status === 'Active') {
    /// //// //// /// GAME LOOP
     // Remove all hands in room through seats
     // Create a hand for each seat
-    await handModel.resetHands(data[roomId].room.id);
+    if (currentTurn === 0) {
+      await handModel.resetHands(data[roomId].room.id);
+      await dealInitialCards(roomId);
+      // Move to the next player
+      currentTurn = 1;
+    }
     
-    await dealInitialCards(roomId);
-    // Move to the next player
-    const playerSeats = data[roomId].seats.sort((a, b) => a.number - b.number).filter(seat => seat.number !== 0 && seat.account_active_id !== null);
-  
-    for (let seat of playerSeats) {
-      console.info(`${data[roomId].room.name}: Moving to next player in seatId ${seat.id}`);
-      if (seat.is_bot) {
-        await handleBotTurn(roomId, seat.id);
+    const playerSeats = data[roomId].seats.sort((a, b) => a.number - b.number).filter(seat => seat.number !== 0 && seat.account_active_id !== null);  
+    if (currentTurn > 0 && currentTurn <= playerSeats.length) {
+      console.info(`${data[roomId].room.name}: Moving to next player in seatId ${playerSeats[currentTurn - 1].id}`);
+      if (playerSeats[currentTurn - 1].is_bot) {
+        await handleBotTurn(roomId, playerSeats[currentTurn - 1].id);
       }
       else {
-        await handlePlayerTurn(seat.id);
+        await handlePlayerTurn(roomId, playerSeats[currentTurn - 1].id);
       }
-    }
-    // Dealers Turn
-    const dealerSeat = data[roomId].seats.filter(seat => seat.number === 0)[0];
-    await handleDealersTurn(roomId, dealerSeat.id);
-    await determineWinners(roomId);
 
-    // /// ///// //////  End loop
-    await debugEndLoop(roomId)
+      currentTurn += 1;
+    }
+    
+    if (currentTurn > playerSeats.length) {
+      const dealerSeat = data[roomId].seats.filter(seat => seat.number === 0)[0];
+      await handleDealersTurn(roomId, dealerSeat.id);
+      // Dealers Turn
+      await determineWinners(roomId);
+  
+      // /// ///// //////  End loop
+      await debugEndLoop(roomId)
+      currentTurn = 0;
+    }
+
   }
 
   
-
-
-
 
 }
 
@@ -78,8 +86,9 @@ async function handleBotTurn(roomId, seatId) {
   await botAi.handleTurn(roomId, seatId);
 }
 
-async function handlePlayerTurn(seatId) {
-  console.log("Player turn", seatId);
+async function handlePlayerTurn(roomId, seatId) {
+  console.log("Player turn", roomId, seatId);
+  await playerControl.handleTurn(roomId, seatId);
 }
 
 async function handleDealersTurn(roomId, seatId) {
@@ -90,16 +99,46 @@ async function determineWinners(roomId) {
   // Wait 3 seconds
   await new Promise(resolve => setTimeout(resolve, 3000));
   // Loop through hands, compare to dealer, record win or loss.
-  const seats = data[roomId].seats.filter(seat => seat.number === 0 || seat.account_active_id !== null);
-  // for (let seat of seats) {
-  //   // Get hands in seat
-  //   const hands = data[roomId].hands.filter(hand => hand.seat_id === seat.id);
-  //   for (let hand of hands) {
-  //     // botAi.compareFinalValue(roomId, hand.id)
-  //   }
-  // }
+  const playerSeats = data[roomId].seats.filter(seat => seat.account_active_id !== null);
+  const dealerSeat = data[roomId].seats.filter(seat => seat.number === 0)[0];
+  const dealerHand = data[roomId].hands.filter(hand => hand.seat_id === dealerSeat.id)[0];
+  if (dealerHand.final_value > 21) {
+    dealerHand.final_value = 0;
+  }
+  for (let seat of playerSeats) {
+    let hands = data[roomId].hands.filter(hand => hand.seat_id === seat.id);
+    for (let hand of hands) {
+      console.info(`${data[roomId].room.name}: HandId: ${hand.id} Final value ${hand.final_value} vs Dealer Final value ${dealerHand.final_value}`);
+      
+      let bust = 0;
+      let win = 0;
+      let loss = 0;
+      let push = 0;
 
+      if (hand.final_value > 21) {
+        loss += 1;
+      }
+      else if (hand.final_value === dealerHand.final_value) {
+        push += 1;
+      }
+      else if (hand.final_value > dealerHand.final_value) {
+        win += 1;
+      }
+      else {
+        loss += 1;
+      }
 
+      await handModel.setRoundResult(hand.id, bust, win, loss, push);
+      await broadcaster.updateGameDataObjects(data[roomId].room.id);
+
+      await accountModel.upsertGameRecord(seat.account_active_id, {
+        win: win,
+        loss: loss,
+        push: push,
+      });
+    }
+
+  }
 
 };
 

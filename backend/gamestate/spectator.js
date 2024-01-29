@@ -9,6 +9,7 @@ const seatModel = require('../models/seat.js');
 const cardModel = require('../models/card.js');
 
 async function playerJoinedRoom(playerId, roomId) {
+  console.log(`Room ${roomId}: Player ${playerId} joined the room`);
   if (playerId) {
     console.info(`Room ${roomId}: Player ${playerId} joined the room`);
   }
@@ -55,7 +56,7 @@ async function validateRoom(roomId) {
   }
 }
 
-async function initializeRoom() {
+async function initializeRoom(roomId) {
   try {
     await seatModel.addSeatsToRoom(data[roomId].room.id, data[roomId].room.seat_amount);
     await cardModel.addDecksToRoom(data[roomId].room.id, data[roomId].room.deck_amount);

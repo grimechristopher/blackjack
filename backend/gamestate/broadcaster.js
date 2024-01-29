@@ -27,7 +27,7 @@ async function updateGameDataObjects(roomId) {
   const seatResults = await pool.query('SELECT seat.id, seat.number, seat.room_id, seat.account_active_id, seat.account_next_id, seat.status, account.username, account.is_bot FROM seat LEFT JOIN account ON seat.account_active_id = account.id WHERE seat.room_id = $1 ORDER BY seat.number', [roomId]);
   data[roomId].seats = seatResults.rows;
   // Get hands in room through seats
-  const handResults = await pool.query('SELECT hand.id, hand.seat_id, seat.number as seat_number FROM hand JOIN SEAT ON hand.seat_id = seat.id WHERE room_id = $1', [roomId]);
+  const handResults = await pool.query('SELECT hand.id, hand.seat_id, seat.number as seat_number, hand.round_result, hand.final_value FROM hand JOIN SEAT ON hand.seat_id = seat.id WHERE room_id = $1', [roomId]);
   data[roomId].hands = handResults.rows;
 
   // Update the connected sockets

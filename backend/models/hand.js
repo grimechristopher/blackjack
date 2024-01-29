@@ -46,9 +46,30 @@ async function setFinalValue(handId, value) {
   }
 };
 
+async function setRoundResult(handId, bust, win, loss, push) {
+  try {
+    if (bust > 0) {
+      await pool.query(`UPDATE hand SET round_result = 'Bust' WHERE id = $1`, [handId]);
+    }
+    else if (win > loss && win > push) {
+      await pool.query(`UPDATE hand SET round_result = 'Win' WHERE id = $1`, [handId]);
+    }
+    else if (loss > win && loss > push) {
+      await pool.query(`UPDATE hand SET round_result = 'Loss' WHERE id = $1`, [handId]);
+    }
+    else if (push > win && push > loss) {
+      await pool.query(`UPDATE hand SET round_result = 'Push' WHERE id = $1`, [handId]);
+    }
+  }
+  catch (error) {
+    console.error("error setting round round_result", error);
+  }
+}
+
 module.exports = {
   resetHands,
   dealCard,
   splitHand,
   setFinalValue,
+  setRoundResult,
 }

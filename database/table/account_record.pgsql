@@ -1,0 +1,8 @@
+CREATE TABLE account_record (
+  id SERIAL PRIMARY KEY,
+  account_id INTEGER NOT NULL,
+  win INTEGER DEFAULT 0,
+  loss INTEGER DEFAULT 0,
+  push INTEGER DEFAULT 0, 
+  FOREIGN KEY (account_id) REFERENCES account (id) ON DELETE CASCADE
+);
