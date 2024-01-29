@@ -88,7 +88,7 @@ function takeSeat() {
     router.push({ name: 'LoginPage', query: { 'room-redirect': store.state.room.id } });
   }
   else {
-    socket.emit('assign seat', { seatId: props.seat.id });
+    socket.emit('assign seat', { roomId: props.seat.room_id, seatId: props.seat.id });
   }
 }
 

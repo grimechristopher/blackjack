@@ -25,5 +25,6 @@ module.exports = async function(socket, io) {
   socket.on('assign seat', async function (data) {
     const accountId = socket.handshake.auth.id; // Get account id from token
     seatModel.assignAccountToSeat(accountId, data.seatId);
+    await gsm.playerTookSeat(accountId, data.roomId);
   });
 };

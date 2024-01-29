@@ -1,6 +1,7 @@
 const {data} = require('./gameData.js');
 const broadcaster = require('./broadcaster.js');
 const botAi = require('./botAi.js');
+const playerControl = require('./playerControl.js');
 
 const roomModel = require('../models/room.js');
 const seatModel = require('../models/seat.js');
@@ -13,7 +14,7 @@ async function start(roomId) {
   roomModel.setRoomStatus(data[roomId].room.id, 'Active');
   data[roomId].room.status = 'Active';
   // Set the rooms taken seats to active 
-  await seatModel.setSeatsStatus(data[roomId].room.id, 'Active');
+  // await seatModel.setSeatsStatus(data[roomId].room.id, 'Active');
 
   let currentTurn = 0;
   while (data[roomId].room.status === 'Active') {
@@ -21,7 +22,12 @@ async function start(roomId) {
     // Remove all hands in room through seats
     // Create a hand for each seat
     if (currentTurn === 0) {
+      // Set the rooms taken seats to active   
+      await seatModel.setSeatsStatus(data[roomId].room.id, 'Active');
+
       await handModel.resetHands(data[roomId].room.id);
+      broadcaster.updateGameDataObjects(data[roomId].room.id);
+      console.log("wtf is going on with the room", data[roomId])
       await dealInitialCards(roomId);
       // Move to the next player
       currentTurn = 1;

@@ -19,10 +19,14 @@ async function setSeatsStatus(roomId, status) {
 }
 
 async function assignAccountToSeat(accountId, seatId) {
+  // Set any seats the player is in to inactive
+  let query1 = `UPDATE seat SET status = 'Inactive' WHERE account_active_id = $1`;
+  let values1 = [accountId];
+  await pool.query(query1, values1);
   let query = `UPDATE seat SET account_active_id = $1 WHERE id = $2`;
   let values = [accountId, seatId];
   console.log('assignAccountToSeat', query, values);
-  // await pool.query(query, values);
+  await pool.query(query, values);
 }
 
 module.exports = {
