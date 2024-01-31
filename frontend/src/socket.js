@@ -20,6 +20,9 @@ export const socket = io(URL, {
 // Connection
 socket.on("connect", () => {
   console.log("connected");
+  if (store.state.room) {
+    socket.emit('joinRoom', { roomId: store.state.room.id});
+  }
 });
 
 socket.on("updateRoomList", (data) => {

@@ -105,6 +105,10 @@ authRouter.post('/register/', async (request,response, next) => {
   };
 });
 
+authRouter.get('/validate-token/', verifyAuth, (request,response) => {
+  return response.status(200).send('Valid token');
+});
+
 authRouter.get('/test-public/', (request,response) => {
   console.log("test public")
 });

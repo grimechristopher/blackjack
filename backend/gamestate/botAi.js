@@ -64,7 +64,6 @@ async function calculateHandValue(cards) {
 }
 
 async function handleDealersTurn(roomId, seatId) {
-  console.log("Dealer turn", roomId, seatId);
   // The dealer must take a card on 16 or less and stand on 17 or more
   // Get the dealers hand
   const dealerHand = data[roomId].hands.filter(hand => hand.seat_id === seatId)[0];

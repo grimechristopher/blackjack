@@ -28,6 +28,9 @@
       </div>
     </div>
   </div>
+  <div>
+    <button @click="playerActionStand()">Stand</button>
+  </div>
 </template>
 
 <script setup>
@@ -90,6 +93,10 @@ function setSeats() {
 
 function resizeCardGameTable() {
   setSeats();
+}
+
+function playerActionStand() {
+  socket.emit('player action stand', { roomId: route.params.roomId });
 }
 
 </script>

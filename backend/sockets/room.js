@@ -23,8 +23,21 @@ module.exports = async function(socket, io) {
   });
 
   socket.on('assign seat', async function (data) {
-    const accountId = socket.handshake.auth.id; // Get account id from token
-    seatModel.assignAccountToSeat(accountId, data.seatId);
-    await gsm.playerTookSeat(accountId, data.roomId);
+    const accountId = socket.handshake.auth?.id; // Get account id from token
+    if (!accountId) {
+      return;
+    }
+
+    await seatModel.assignAccountToSeat(accountId, data.seatId);
+    await gsm.playerTookSeat(accountId, data.roomId, data.roomId);
   });
+
+  socket.on('player action stand', async function (data) {
+    const accountId = socket.handshake.auth?.id; // Get account id from token
+    if (!accountId) {
+      return;
+    }
+    await gsm.playerActionStand(accountId, data.roomId);
+  });
+
 };

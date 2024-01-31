@@ -18,6 +18,8 @@ async function start(roomId) {
 
   let currentTurn = 0;
   while (data[roomId].room.status === 'Active') {
+    await roomModel.setActiveSeat(roomId, 0);
+    await broadcaster.updateGameDataObjects(data[roomId].room.id);
    /// //// //// /// GAME LOOP
     // Remove all hands in room through seats
     // Create a hand for each seat
@@ -26,32 +28,43 @@ async function start(roomId) {
       await seatModel.setSeatsStatus(data[roomId].room.id, 'Active');
 
       await handModel.resetHands(data[roomId].room.id);
-      broadcaster.updateGameDataObjects(data[roomId].room.id);
-      console.log("wtf is going on with the room", data[roomId])
+      await broadcaster.updateGameDataObjects(data[roomId].room.id);
       await dealInitialCards(roomId);
       // Move to the next player
       currentTurn = 1;
+      // await roomModel.setActiveSeat(data[roomId].room.id, currentTurn);
+      // await broadcaster.updateGameDataObjects(data[roomId].room.id);
     }
     
-    const playerSeats = data[roomId].seats.sort((a, b) => a.number - b.number).filter(seat => seat.number !== 0 && seat.account_active_id !== null);  
+    const playerSeats = data[roomId].seats.sort((a, b) => a.number - b.number).filter(seat => seat.number !== 0 && seat.account_active_id !== null && seat.status === 'Active');  
     if (currentTurn > 0 && currentTurn <= playerSeats.length) {
+      await roomModel.setActiveSeat(roomId, playerSeats[currentTurn - 1].number);
+      await broadcaster.updateGameDataObjects(data[roomId].room.id);
+
       console.info(`${data[roomId].room.name}: Moving to next player in seatId ${playerSeats[currentTurn - 1].id}`);
       if (playerSeats[currentTurn - 1].is_bot) {
         await handleBotTurn(roomId, playerSeats[currentTurn - 1].id);
       }
       else {
         await handlePlayerTurn(roomId, playerSeats[currentTurn - 1].id);
+        await roomModel.setAction(roomId, null); // Set the rooms action to null since turn has ended
+        data[roomId].room.player_action = null;
       }
 
       currentTurn += 1;
     }
     
     if (currentTurn > playerSeats.length) {
+      await roomModel.setActiveSeat(roomId, 0);
+      await broadcaster.updateGameDataObjects(data[roomId].room.id);
+
       const dealerSeat = data[roomId].seats.filter(seat => seat.number === 0)[0];
       await handleDealersTurn(roomId, dealerSeat.id);
       // Dealers Turn
       await determineWinners(roomId);
   
+      await finishRound(roomId);
+      await broadcaster.updateGameDataObjects(data[roomId].room.id);
       // /// ///// //////  End loop
       await debugEndLoop(roomId)
       currentTurn = 0;
@@ -93,7 +106,6 @@ async function handleBotTurn(roomId, seatId) {
 }
 
 async function handlePlayerTurn(roomId, seatId) {
-  console.log("Player turn", roomId, seatId);
   await playerControl.handleTurn(roomId, seatId);
 }
 
@@ -148,11 +160,16 @@ async function determineWinners(roomId) {
 
 };
 
+async function finishRound(roomId) {
+  // Take all inactive seats and set them the active player to null
+  seatModel.clearSeatsStatus(data[roomId].room.id);
+}
+
 async function debugEndLoop(roomId) {
   // If theres still sockets spectating then continue the loop. If not then end the loop
   try {
     let socketsCount = await broadcaster.requestConnectedClientsCount(data[roomId].room.name);
-    if (socketsCount > 0) {
+    if (socketsCount > 0 && data[roomId].seats.filter(seat => seat.account_active_id !== null).length > 0) {
       console.info(`${data[roomId].room.name}: DEBUG There are still sockets spectating. Continuing the game loop`);
       return;
     }

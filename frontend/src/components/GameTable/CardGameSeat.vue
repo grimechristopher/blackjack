@@ -28,6 +28,7 @@ import { useStore } from 'vuex';
 import { setActiveTurn, leaveSeat} from '../../socket.js';
 import { socket } from '@/socket';
 import { useRouter } from 'vue-router';
+import { isValidAuth } from '@/composables/JwtValidation.js';
 
 const props = defineProps(['seat', 'height', 'rightSideRow']);
 const store = useStore();
@@ -83,12 +84,19 @@ function isActiveSeat() {
   }
 }
 
-function takeSeat() {
+async function takeSeat() {
   if (!store.state.user.username) {
     router.push({ name: 'LoginPage', query: { 'room-redirect': store.state.room.id } });
   }
   else {
-    socket.emit('assign seat', { roomId: props.seat.room_id, seatId: props.seat.id });
+    let isValid = await isValidAuth();
+    if (!isValid) {
+      store.dispatch('updateUser', {});
+      router.push({ name: 'LoginPage', query: { 'room-redirect': store.state.room.id } }); 
+    }
+    else {
+      socket.emit('assign seat', { roomId: props.seat.room_id, seatId: props.seat.id });
+    }
   }
 }
 

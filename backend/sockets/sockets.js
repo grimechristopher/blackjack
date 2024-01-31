@@ -24,8 +24,14 @@ module.exports = {
           }
         });
         // Decode the token and store information in the socket connection
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        socket.handshake.auth = decoded;
+        try {
+          const decoded = jwt.verify(token, process.env.JWT_SECRET);
+          socket.handshake.auth = decoded;
+        }
+        catch (error) {
+          socket.handshake.auth = null;
+        }
+        
       }
       next();
     });
