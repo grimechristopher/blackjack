@@ -42,17 +42,28 @@ async function updateGameDataObjects(roomId) {
   });
 }
 
-async function requestConnectedClientsCount(roomId) {
+async function requestConnectedClientsCount(roomName) {
   // Determine number of clients connected to the room. Used to determine if the room is empty of spectators
   await new Promise(resolve => socket.emit('request connected clients count', {
-    roomId: roomId,
+    roomName: roomName,
   }, (response) => resolve(connectedClientsInRoomCount = response)))
   return connectedClientsInRoomCount;
 }
+
+async function updateActiveSeatTimer(roomName, time) {
+  console.log(`Room ${roomName}: ${time} seconds left on the active seat timer`)
+  socket.emit('emit_updateActiveSeatTimer', {
+    roomName: roomName,
+    timeLeft: 20 - Math.floor(time),
+  })
+}
+
+
 
 module.exports = {
   io: io,
   socket: socket,
   updateGameDataObjects: updateGameDataObjects,
   requestConnectedClientsCount: requestConnectedClientsCount,
+  updateActiveSeatTimer: updateActiveSeatTimer,
 }

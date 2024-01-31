@@ -1,13 +1,13 @@
 <template>
   <div class="seat" ref="seatRef" :class="{'seat-right': props.rightSideRow}" >
-    <div class="seat-info">
-      <div class="seat-header" :class="{'right-side': props.rightSideRow}">
+    <div class="seat-info" :class="{'info-right': props.rightSideRow}">
+      <div class="seat-header" :class="{'right-side': props.rightSideRow, 'header-active': isActiveSeat()}">
         <span v-html="numberCircle" @click="setActiveSeat"></span>&nbsp;
         <span v-if="props.seat.username" @click="removeFromSeat">{{ props.seat.username }}</span> 
         <span v-else-if="!store.state.user.seat"><button @click="takeSeat">+</button></span>
       </div>
       <div class="timer">
-        <progress v-if="isActiveSeat()" :id="`seat${props.seat.id}_progress`" :value="store.state.room.activeTurnTime" max="30"> {{ store.state.room.activeTurnTime }}</progress>
+        <progress v-if="isActiveSeat()" :id="`seat${props.seat.id}_progress`" :value="store.state.room.activeTimeLeft ?? 20" max="30"> {{ store.state.room.activeTurnTime }}</progress>
       </div>
     </div>
       <div class="hands-container" >
@@ -76,7 +76,7 @@ function setActiveSeat() {
 }
 
 function isActiveSeat() {
-  if (store.state.room.activeSeat === props.seat.id) {
+  if (store.state.room.active_seat_number === props.seat.number) {
     return true;
   }
   else {
@@ -96,6 +96,7 @@ async function takeSeat() {
     }
     else {
       socket.emit('assign seat', { roomId: props.seat.room_id, seatId: props.seat.id });
+      // store.dispatch('updateUserSeat', props.seat.id);
     }
   }
 }
@@ -122,7 +123,21 @@ function removeFromSeat() {
   border-bottom: 1px solid #fefefe;
   border-left: 1px solid #fefefe;
   border-bottom-left-radius: 12.5%;
+}
 
+.seat-info {
+  display: flex;
+  /* overflow-x: hidden; */
+  /* flex-direction: row-reverse; */
+}
+.info-right {
+  display: flex;
+  flex-direction: row-reverse;
+}
+
+.timer {
+  flex-shrink: 1;
+  max-width: 50%;
 }
 
 .seat-right {
@@ -136,6 +151,10 @@ function removeFromSeat() {
 
 .seat-header {
   padding-bottom: 2px;
+  flex-grow: 1;
+}
+.header-active {
+  color: dodgerblue
 }
 
 .right-side {

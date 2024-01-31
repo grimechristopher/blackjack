@@ -13,8 +13,9 @@ async function handleTurn(roomId, seatId) {
 
   let counter = 0;
   await new Promise( (resolve, reject) => {
-    let playerInterval = setInterval(() => { 
+    let playerInterval = setInterval( async () => { 
       counter += 0.5;
+      await broadcaster.updateActiveSeatTimer(data[roomId].room.name, counter)
 
       // Check if player has made a decision
       if (data[roomId].room.player_action !== null) {
@@ -50,7 +51,7 @@ async function playerActionStand(playerId, roomId) {
       data[roomId].room.player_action = 'Stand';
     }
     else {
-      console.error(`Room ${roomId}: Player ${playerId0 }is not in active seat`);
+      console.error(`Room ${roomId}: Player ${playerId}is not in active seat`);
     }
   }
   catch (error) {

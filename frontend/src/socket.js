@@ -41,6 +41,14 @@ socket.on("updateGame", (data) => {
   // store.dispatch('updateAccounts', data.players);
 });
 
+socket.on("updateActiveSeatTimer", (data) => {
+  store.dispatch('updateActiveSeatTimer', data);
+});
+
+// socket.on("updateUserSeat", (data) => {
+//   store.dispatch('updateUserSeat', data);
+// });
+
 
 
 // Will be able to remove once app is complete

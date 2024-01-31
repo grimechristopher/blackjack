@@ -6,6 +6,7 @@ const playerControl = require('./playerControl.js');
 const roomModel = require('../models/room.js');
 const seatModel = require('../models/seat.js');
 const handModel = require('../models/hand.js');
+const cardModel = require('../models/card.js');
 const accountModel = require('../models/account.js');
 
 async function start(roomId) {
@@ -162,7 +163,10 @@ async function determineWinners(roomId) {
 
 async function finishRound(roomId) {
   // Take all inactive seats and set them the active player to null
-  seatModel.clearSeatsStatus(data[roomId].room.id);
+  await cardModel.clearCards(data[roomId].room.id);
+  await seatModel.clearSeatsStatus(data[roomId].room.id);
+
+  await broadcaster.updateGameDataObjects(data[roomId].room.id);
 }
 
 async function debugEndLoop(roomId) {

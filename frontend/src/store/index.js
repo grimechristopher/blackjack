@@ -18,7 +18,7 @@ export default createStore({
       id: null,
       name: '',
       activeSeat: null,
-      activeTurnTime: null,
+      activeTimeLeft: 20,
     },
     dealer: {
 
@@ -64,6 +64,12 @@ export default createStore({
     setActiveTurn({ commit }, data ) {
       commit('setActiveTurn', data);
     },
+    updateActiveSeatTimer({ commit }, data ) {
+      commit('updateActiveSeatTimer', data);
+    },
+    // updateUserSeat({ commit }, data ) {
+    //   commit('updateUserSeat', data);
+    // },
 
     sitPlayer({ commit }, data ) {
       commit('assignPlayerToSeat', data);
@@ -106,6 +112,15 @@ export default createStore({
     UPDATE_Cards(state, data) {
       state.cards = data;
     },
+    updateActiveSeatTimer(state, data) {
+      console.log("Setting active turn time", data)
+      state.room.activeTimeLeft = data;
+    },
+    // updateUserSeat(state, data) {
+    //   state.userSeatId = data;
+    // },
+
+
     addCardToHand(state, data) {
       const undeltCards = state.cards.filter(card => card.handId === null);
       let randomCard = undeltCards[(Math.floor(Math.random() * undeltCards.length))];

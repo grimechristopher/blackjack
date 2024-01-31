@@ -30,6 +30,13 @@ function createDeck() {
   return deck;
 };
 
+async function clearCards(roomId) {
+  let query = `UPDATE card SET hand_id = null WHERE room_id = $1`;
+  let values = [roomId];
+  await pool.query(query, values);
+}
+
 module.exports = {
   addDecksToRoom,
+  clearCards,
 };
