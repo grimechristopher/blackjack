@@ -37,7 +37,7 @@ async function start(roomId) {
       // await broadcaster.updateGameDataObjects(data[roomId].room.id);
     }
     
-    const playerSeats = data[roomId].seats.sort((a, b) => a.number - b.number).filter(seat => seat.number !== 0 && seat.account_active_id !== null && seat.status === 'Active');  
+    const playerSeats = data[roomId].seats.filter(seat => seat.number !== 0 && seat.account_active_id !== null && seat.status === 'Active').sort((a, b) => a.number - b.number);  
     if (currentTurn > 0 && currentTurn <= playerSeats.length) {
       await roomModel.setActiveSeat(roomId, playerSeats[currentTurn - 1].number);
       await broadcaster.updateGameDataObjects(data[roomId].room.id);
@@ -86,7 +86,7 @@ async function dealInitialCards(roomId) {
   // Blackjack, each player gets 2 cards.
   for (let i of [1, 2]) {
     // Deal first to players in order of seat number
-    const playerHands = data[roomId].hands.filter(hand => hand.seat_number !== 0);
+    const playerHands = data[roomId].hands.filter(hand => hand.seat_number !== 0).sort((a, b) => a.seat_number - b.seat_number);
     for (let hand of playerHands) {
       console.info(`${data[roomId].room.name}: Dealing cards to player handId ${hand.id} in seatId ${hand.seat_id}`);
       await handModel.dealCard(hand.id, data[roomId].cards);

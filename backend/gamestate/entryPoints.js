@@ -35,8 +35,18 @@ async function playerActionStand(playerId, roomId) {
   await playerControl.playerActionStand(playerId, roomId);
 }
 
+async function playerActionHit(playerId, roomId, handId) {
+  await playerControl.playerActionHit(playerId, roomId, handId);
+}
+
+async function playerActionSplit(playerId, roomId, handId) {
+  await playerControl.playerActionSplit(playerId, roomId, handId);
+}
+
 module.exports = {
   playerTookSeat,
   playerJoinedRoom,
   playerActionStand,
+  playerActionHit,
+  playerActionSplit,
 };

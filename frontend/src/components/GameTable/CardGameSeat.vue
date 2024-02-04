@@ -4,7 +4,7 @@
       <div class="seat-header" :class="{'right-side': props.rightSideRow, 'header-active': isActiveSeat()}">
         <span v-html="numberCircle" @click="setActiveSeat"></span>&nbsp;
         <span v-if="props.seat.username" @click="removeFromSeat">{{ props.seat.username }}</span> 
-        <span v-else-if="!store.state.user.seat"><button @click="takeSeat">+</button></span>
+        <span v-else-if="true"><button @click="takeSeat">+</button></span>
       </div>
       <div class="timer">
         <progress v-if="isActiveSeat()" :id="`seat${props.seat.id}_progress`" :value="store.state.room.activeTimeLeft ?? 20" max="30"> {{ store.state.room.activeTurnTime }}</progress>

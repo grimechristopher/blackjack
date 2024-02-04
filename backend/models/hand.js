@@ -19,8 +19,9 @@ async function dealCard(handId, deck) {
     // I only want cards that arent in a hand
     const undeltCards = deck.filter(card => card.hand_id === null); // remove cards with a han
     const card = undeltCards.sort(() => 0.5 - Math.random()).slice(0, 1)[0]; // Randomly shuffle array of deck and take the first card
-    await pool.query(`UPDATE card SET hand_id = $1 WHERE id = $2`, [handId, card.id]);
-    console.info(`Dealt card ${card.id} to handId ${handId}`);
+    const deltCardsLength = deck.length - undeltCards.length;
+    await pool.query(`UPDATE card SET hand_id = $1, order_drawn = $3 WHERE id = $2`, [handId, card.id, deltCardsLength + 1]);
+    console.info(`Dealt card ${card.id} to handId ${handId} cards drawn: ${deltCardsLength + 1}`);
   }
   catch (error) {
     console.error(`error dealing card to handId, ${handId}`, error);

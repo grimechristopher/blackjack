@@ -9,7 +9,7 @@ module.exports = async function(socket, io) {
   });
 
   socket.on('request connected clients count', async function (data, callback) {
-    const sockets = await io.in(data.roomId).fetchSockets();
+    const sockets = await io.in(data.roomName).fetchSockets();
     const socketIds = sockets.map(socket => socket.id);
 
     await callback(socketIds.length);

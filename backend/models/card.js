@@ -31,7 +31,7 @@ function createDeck() {
 };
 
 async function clearCards(roomId) {
-  let query = `UPDATE card SET hand_id = null WHERE room_id = $1`;
+  let query = `UPDATE card SET hand_id = null, order_drawn = null WHERE room_id = $1`;
   let values = [roomId];
   await pool.query(query, values);
 }

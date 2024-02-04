@@ -30,6 +30,10 @@
   </div>
   <div>
     <button @click="playerActionStand()">Stand</button>
+    <div v-for="hand, index in playerHands" :key="hand.id">
+      <button @click="playerActionHit(hand.id)">Hit {{ index + 1 }}</button>
+      <button v-if="isHandSplittable(hand.id)" @click="playerActionSplit(hand.id)">Split {{ index + 1 }}</button>
+    </div>
   </div>
 </template>
 
@@ -57,6 +61,8 @@ const communitySection = ref(null);
 const playersSection = ref(null);
 const room = ref(null);
 
+const playerHands = ref(0);
+
 // In the Vuex store there is a list of 'seats' for the table. There are multiple player seats 1 of n and a single community/dealer seat
 // When the player joins a room the frontend needs to be updated with the current state of the table.
 // We will mock a socket event that will update the vuex store with the current state of the table.
@@ -67,9 +73,10 @@ onMounted(() => {
   setSeats();
 })
 
-watch( () => store.state.seats, () => {
+watch( () => store.state, () => {
   setSeats();
-});
+  setPlayerHands();
+}, { deep: true });
 
 // A function is used to set the seats to create two rows of seats and also seperate the community seat from the player seats.
 // Assumption: The seats in the store dont change after the room is created or midgame.
@@ -91,12 +98,41 @@ function setSeats() {
   }
 }
 
+function setPlayerHands() {
+  // First users seat needs to be found, second hands in that seat.
+  const userSeat = store.state.seats.find(seat => seat.account_id === store.state.user.id);
+  if (!userSeat) {
+    return;
+  }
+  let userHands = store.state.hands.filter(hand => hand.seat_id === userSeat.id);
+  playerHands.value = userHands;
+}
+
 function resizeCardGameTable() {
   setSeats();
 }
 
+// I need to apply a debounce to these buttons to prevent the user from spamming the buttons
 function playerActionStand() {
   socket.emit('player action stand', { roomId: route.params.roomId });
+}
+
+function playerActionHit(handId) {
+ socket.emit('player action hit', { roomId: route.params.roomId, handId: handId }); 
+}
+
+function playerActionSplit(handId) {
+  socket.emit('player action split', { roomId: route.params.roomId, handId: handId });
+}
+
+function isHandSplittable(handId) {
+  let handsCards = store.state.cards.filter(card => card.hand_id === handId);
+  if (handsCards.length === 2) {
+    if (handsCards[0].value === handsCards[1].value) {
+      return true;
+    }
+  }
+  return false;
 }
 
 </script>

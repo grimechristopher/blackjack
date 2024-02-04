@@ -40,4 +40,20 @@ module.exports = async function(socket, io) {
     await gsm.playerActionStand(accountId, data.roomId);
   });
 
+  socket.on('player action hit', async function (data) {
+    const accountId = socket.handshake.auth?.id; // Get account id from token
+    if (!accountId) {
+      return;
+    }
+    await gsm.playerActionHit(accountId, data.roomId, data.handId);
+  });
+
+  socket.on('player action split', async function (data) {
+    const accountId = socket.handshake.auth?.id; // Get account id from token
+    if (!accountId) {
+      return;
+    }
+    await gsm.playerActionSplit(accountId, data.roomId, data.handId);
+  });
+
 };

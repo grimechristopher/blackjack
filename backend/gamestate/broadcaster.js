@@ -13,6 +13,7 @@ socket.on('connect', function (socket) {
 
 let connectedClientsInRoomCount = 0;
 
+// TODO: I need to make sure the results are always sorted.
 async function updateGameDataObjects(roomId) {
   if (!data[roomId]) {
     await createRoom(roomId); // Creates a new room in data object if one doesn't exist
@@ -24,7 +25,7 @@ async function updateGameDataObjects(roomId) {
   const cardResults = await pool.query('SELECT * FROM card WHERE room_id = $1', [roomId]);
   data[roomId].cards = cardResults.rows;
   // Get seats in room
-  const seatResults = await pool.query('SELECT seat.id, seat.number, seat.room_id, seat.account_active_id, seat.account_next_id, seat.status, account.username, account.is_bot FROM seat LEFT JOIN account ON seat.account_active_id = account.id WHERE seat.room_id = $1 ORDER BY seat.number', [roomId]);
+  const seatResults = await pool.query('SELECT seat.id, seat.number, seat.room_id, seat.account_active_id, seat.account_next_id, seat.status, account.id as account_id, account.username, account.is_bot FROM seat LEFT JOIN account ON seat.account_active_id = account.id WHERE seat.room_id = $1 ORDER BY seat.number', [roomId]);
   data[roomId].seats = seatResults.rows;
   // Get hands in room through seats
   const handResults = await pool.query('SELECT hand.id, hand.seat_id, seat.number as seat_number, hand.round_result, hand.final_value FROM hand JOIN SEAT ON hand.seat_id = seat.id WHERE room_id = $1', [roomId]);

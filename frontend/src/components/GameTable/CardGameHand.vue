@@ -26,7 +26,7 @@ watch (store.state, () => {
   setCards();
 }, {deep: true});
 function setCards() {
-  cards.value = store.state.cards.filter(card => card.hand_id === props.hand.id);
+  cards.value = store.state.cards.filter(card => card.hand_id === props.hand.id).sort((a, b) => a.order_drawn - b.order_drawn);
 }
 
 </script>
