@@ -7,7 +7,7 @@
         <span v-else-if="true"><button @click="takeSeat">+</button></span>
       </div>
       <div class="timer">
-        <progress v-if="isActiveSeat()" :id="`seat${props.seat.id}_progress`" :value="store.state.room.activeTimeLeft ?? 20" max="30"> {{ store.state.room.activeTurnTime }}</progress>
+        <progress v-if="isActiveSeat()" :id="`seat${props.seat.id}_progress`" :value="store.state.room.activeTimeLeft ?? 20" max="20"> {{ store.state.room.activeTurnTime }}</progress>
       </div>
     </div>
       <div class="hands-container" >
@@ -58,7 +58,7 @@ watch (store.state, () => {
   setHands();
 }), {deep: true};
 function setHands() {
-  hands.value = store.state.hands.filter(hand => hand.seat_id === props.seat.id);
+  hands.value = store.state.hands.filter(hand => hand.seat_id === props.seat.id).sort((a, b) => a.id - b.id);
 }
 
 watch(() => props.height, () => {

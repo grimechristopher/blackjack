@@ -27,7 +27,7 @@ async function playerJoinedRoom(playerId, roomId) {
   // Room is valid.
   // If room is inactive AND there are players in the seats (bots) then start the game. GIVE THE PEOPLE SOMETHING TO LOOK AT
   // Inactive room + players = bots and the game needs to start
-  if (data[roomId].room.status === "Inactive" && data[roomId].seats.filter(seat => seat.account_next_id !== null).length > 0) {
+  if (data[roomId].room.status === "Inactive" && data[roomId].seats.filter(seat => seat.account_next_id !== null || seat.status === 'Active').length > 0) {
     console.info(`${data[roomId].room.name}: is inactive and there are players at the table.`);
     await gameLoop.start(roomId);
   }

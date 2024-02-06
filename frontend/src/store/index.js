@@ -101,6 +101,10 @@ export default createStore({
       state.user = data;
     },
     UPDATE_Room(state, data) {
+      // Dont let broadcaster set activetimeleft to undefined
+      if (state.room.activeTimeLeft != 0) {
+        data.activeTimeLeft = state.room.activeTimeLeft;
+      }
       state.room = data;
     },
     UPDATE_Players(state, data) {

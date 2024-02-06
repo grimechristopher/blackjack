@@ -31,7 +31,7 @@
   <div>
     <button @click="playerActionStand()">Stand</button>
     <div v-for="hand, index in playerHands" :key="hand.id">
-      <button @click="playerActionHit(hand.id)">Hit {{ index + 1 }}</button>
+      <button v-if="hand.final_value <= 21" @click="playerActionHit(hand.id)">Hit {{ index + 1 }}</button>
       <button v-if="isHandSplittable(hand.id)" @click="playerActionSplit(hand.id)">Split {{ index + 1 }}</button>
     </div>
   </div>
@@ -104,7 +104,7 @@ function setPlayerHands() {
   if (!userSeat) {
     return;
   }
-  let userHands = store.state.hands.filter(hand => hand.seat_id === userSeat.id);
+  let userHands = store.state.hands.filter(hand => hand.seat_id === userSeat.id).sort((a, b) => a.id - b.id);
   playerHands.value = userHands;
 }
 
