@@ -3,7 +3,7 @@
     <div class="seat-info" :class="{'info-right': props.rightSideRow}">
       <div class="seat-header" :class="{'right-side': props.rightSideRow, 'header-active': isActiveSeat()}">
         <span v-html="numberCircle" @click="setActiveSeat"></span>&nbsp;
-        <span v-if="props.seat.username" @click="removeFromSeat">{{ props.seat.username }}</span> 
+        <span v-if="props.seat.active_account_username" @click="removeFromSeat">{{ props.seat.active_account_username }}</span> 
         <span v-else-if="true"><button @click="takeSeat">+</button></span>
       </div>
       <div class="timer">

@@ -43,7 +43,7 @@ async function start(roomId) {
       await broadcaster.updateGameDataObjects(data[roomId].room.id);
 
       console.info(`${data[roomId].room.name}: Moving to next player in seatId ${playerSeats[currentTurn - 1].id}`);
-      if (playerSeats[currentTurn - 1].is_bot) {
+      if (playerSeats[currentTurn - 1].active_account_is_bot) {
         await handleBotTurn(roomId, playerSeats[currentTurn - 1].id);
       }
       else {

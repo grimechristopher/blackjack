@@ -29,9 +29,9 @@
     </div>
   </div>
   <div>
-    <button @click="playerActionStand()">Stand</button>
+    <button v-if="isHandStandable()" @click="playerActionStand()">Stand</button>
     <div v-for="hand, index in playerHands" :key="hand.id">
-      <button v-if="hand.final_value <= 21" @click="playerActionHit(hand.id)">Hit {{ index + 1 }}</button>
+      <button v-if="isHandHittable(hand)" @click="playerActionHit(hand.id)">Hit {{ index + 1 }}</button>
       <button v-if="isHandSplittable(hand.id)" @click="playerActionSplit(hand.id)">Split {{ index + 1 }}</button>
     </div>
   </div>
@@ -100,7 +100,7 @@ function setSeats() {
 
 function setPlayerHands() {
   // First users seat needs to be found, second hands in that seat.
-  const userSeat = store.state.seats.find(seat => seat.account_id === store.state.user.id);
+  const userSeat = store.state.seats.find(seat => seat.account_active_id === store.state.user.id);
   if (!userSeat) {
     return;
   }
@@ -125,6 +125,17 @@ function playerActionSplit(handId) {
   socket.emit('player action split', { roomId: route.params.roomId, handId: handId });
 }
 
+function isHandStandable() {
+  // let handsCards = store.state.cards.filter(card => card.hand_id === handId);
+  // if (handsCards.length === 2) {
+  //   if (handsCards[0].value === handsCards[1].value) {
+  //     return true;
+  //   }
+  // }
+  // return false;
+  return true;
+}
+
 function isHandSplittable(handId) {
   let handsCards = store.state.cards.filter(card => card.hand_id === handId);
   if (handsCards.length === 2) {
@@ -133,6 +144,10 @@ function isHandSplittable(handId) {
     }
   }
   return false;
+}
+
+function isHandHittable(hand) {
+  return hand.final_value <= 21
 }
 
 </script>
