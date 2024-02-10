@@ -9,7 +9,7 @@ app.use(express.json());
 
 // CORS
 const cors = require("cors");
-app.use(cors());
+app.use(cors({credentials: true, origin: ['http://localhost:8080',]}));
 
 // Middleware to parse cookies
 const cookieParser = require('cookie-parser');

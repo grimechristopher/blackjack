@@ -7,8 +7,9 @@ module.exports = {
     const { Server } = require("socket.io");
     const io = new Server(server, {
       cors: {
-        origins: ["http://localhost:8080",],
+        origins: ["http://localhost:8080", "http://localhost:3000"],
       },
+      withCredentials: true,
       cookie: true,
     });
 
