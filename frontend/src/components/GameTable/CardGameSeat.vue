@@ -3,7 +3,7 @@
     <div class="seat-info" :class="{'info-right': props.rightSideRow}">
       <div class="seat-header" :class="{'right-side': props.rightSideRow, 'header-active': isActiveSeat()}">
         <span v-html="numberCircle" @click="setActiveSeat"></span>&nbsp;
-        <span v-if="props.seat.active_account_username" @click="removeFromSeat">{{ props.seat.active_account_username }}</span> 
+        <span v-if="isSeatTaken()" @click="removeFromSeat">{{ seatAccountUsername() }}</span> 
         <span v-else-if="true"><button @click="takeSeat">+</button></span>
       </div>
       <div class="timer">
@@ -12,12 +12,12 @@
     </div>
       <div class="hands-container" >
           <CardGameHand
-            v-for="hand in hands" :key="hand.id"
+            v-for="hand in hands" 
+            :key="hand.id"
             :hand="hand"
             :rightSideRow="props.rightSideRow"
           />
       </div>
-    <!-- {{ props.seat }} -->
   </div>
 </template>
  
@@ -43,14 +43,15 @@ numberCircle.value = `&#${9311 + props.seat.number};` // Fun way to get unicode 
 
 const seatRef = ref(null);
 
+const waitingPlayerUsername = ref('');
+
 setPlayer();
-watch (store.state.players, () => {
+watch( () => store.state.players, () => {
   setPlayer();
 })
 
 function setPlayer() {
   player.value = null;
-  // player.value = store.state.players.find(player => player.id === props.seat.playerId);
 }
 
 setHands();
@@ -105,6 +106,25 @@ function removeFromSeat() {
   leaveSeat(props.seat.id);
 }
 
+function isSeatTaken() {
+  return props.seat.active_account_username !== null || props.seat.waiting_account_username !== null;
+}
+
+// If the active account username is not null and the seat is active then return the active account username
+// If the seat is not active then return the waiting account username
+// When a player times out then the seat is set to inactive but that player is still there. 
+function seatAccountUsername() {
+  if (props.seat.active_account_username !== null && props.seat.status === 'Active') {
+    // Set a waiting account variable so we can show both names if the 'active' player becomes inactive and the next player isnt active yet
+    waitingPlayerUsername.value = props.seat.waiting_account_username;
+    return props.seat.active_account_username;
+  }
+  else {
+    waitingPlayerUsername.value = null;
+    return props.seat.waiting_account_username;
+  }
+}
+
 </script>
 
 <style scoped>
@@ -127,8 +147,6 @@ function removeFromSeat() {
 
 .seat-info {
   display: flex;
-  /* overflow-x: hidden; */
-  /* flex-direction: row-reverse; */
 }
 .info-right {
   display: flex;

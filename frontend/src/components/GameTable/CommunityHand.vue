@@ -19,7 +19,7 @@ const store = useStore();
 const cards = ref([]);
 setCards();
 
-watch (store.state, () => {
+watch( () => store.state, () => {
   setCards();
 }, {deep: true});
 function setCards() {

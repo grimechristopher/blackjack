@@ -28,11 +28,11 @@
       </div>
     </div>
   </div>
-  <div>
-    <button v-if="isHandStandable()" @click="playerActionStand()">Stand</button>
+  <div class="actions-container">
+    <button class="action-button" v-if="isHandStandable()" @click="playerActionStand()">Stand</button>
     <div v-for="hand, index in playerHands" :key="hand.id">
-      <button v-if="isHandHittable(hand)" @click="playerActionHit(hand.id)">Hit {{ index + 1 }}</button>
-      <button v-if="isHandSplittable(hand.id)" @click="playerActionSplit(hand.id)">Split {{ index + 1 }}</button>
+      <button class="action-button" v-if="isHandHittable(hand)" @click="playerActionHit(hand.id)">Hit {{ index + 1 }}</button>
+      <button class="action-button" v-if="isHandSplittable(hand.id)" @click="playerActionSplit(hand.id)">Split {{ index + 1 }}</button>
     </div>
   </div>
 </template>
@@ -73,7 +73,7 @@ onMounted(() => {
   setSeats();
 })
 
-watch( () => store.state, () => {
+watch( () => store.state.seats, () => {
   setSeats();
   setPlayerHands();
 }, { deep: true });
@@ -114,6 +114,8 @@ function resizeCardGameTable() {
 
 // I need to apply a debounce to these buttons to prevent the user from spamming the buttons
 function playerActionStand() {
+  console.log("Clicky clicky")
+
   socket.emit('player action stand', { roomId: route.params.roomId });
 }
 
@@ -125,18 +127,24 @@ function playerActionSplit(handId) {
   socket.emit('player action split', { roomId: route.params.roomId, handId: handId });
 }
 
+function isPlayersTurn() {
+  const userSeat = store.state.seats.find(seat => seat.account_active_id === store.state.user.id) ?? null;
+  if (userSeat) {
+    if (store.state.room.active_seat_number === userSeat.number) {
+      return true;
+    }
+  }
+  return false;
+}
+
 function isHandStandable() {
-  // let handsCards = store.state.cards.filter(card => card.hand_id === handId);
-  // if (handsCards.length === 2) {
-  //   if (handsCards[0].value === handsCards[1].value) {
-  //     return true;
-  //   }
-  // }
-  // return false;
-  return true;
+  return isPlayersTurn();
 }
 
 function isHandSplittable(handId) {
+  if (!isPlayersTurn()) {
+    return false;
+  }
   let handsCards = store.state.cards.filter(card => card.hand_id === handId);
   if (handsCards.length === 2) {
     if (handsCards[0].value === handsCards[1].value) {
@@ -147,6 +155,9 @@ function isHandSplittable(handId) {
 }
 
 function isHandHittable(hand) {
+  if (!isPlayersTurn()) {
+    return false;
+  }
   return hand.final_value <= 21
 }
 
@@ -187,4 +198,22 @@ function isHandHittable(hand) {
   min-height: 0; /* Must set min height in order for grid to resize on page resize */
   max-width: 100%;
 }
+
+.actions-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 2rem;
+}
+
+/* .action-button {
+  border: 1px solid #fefefe;
+  color: #fefefe;
+  border-radius: 5px;
+}
+.action-button:hover {
+  background-color: #fefefe;
+  color: #264f3b;
+} */
+
 </style>

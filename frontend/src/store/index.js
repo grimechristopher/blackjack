@@ -133,7 +133,7 @@ export default createStore({
     },
     setActiveTurn(state, data) {
       state.room.activeSeat = data.seatId;
-      state.room.activeTurnTime = 30;
+      state.room.activeTurnTime = 20;
 
       // Remove this in the future when handled by game state... 
       setTimeout(() => {

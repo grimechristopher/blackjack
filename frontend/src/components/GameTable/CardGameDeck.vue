@@ -18,7 +18,7 @@ setDeckLength();
 function setDeckLength() {
   deckLength.value = store.state.cards.filter(card => card.hand_id === null).length;
 }
-watch (store.state, () => {
+watch( () => store.state, () => {
   setDeckLength();
 }, {immediate: true, deep: true});
 

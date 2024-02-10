@@ -4,10 +4,10 @@ import store from './store'
 
 import * as VueRouter from 'vue-router'
 
-const RoomList = import('./components/RoomList/RoomList.vue');
-const CardGameTable = import('./components/GameTable/CardGameTable.vue');
-const LoginPage = import('./components/Account/LoginPage.vue');
-const RegisterPage = import('./components/Account/RegisterPage.vue');
+const RoomList = () => import('./components/RoomList/RoomList.vue');
+const CardGameTable = () => import('./components/GameTable/CardGameTable.vue');
+const LoginPage = () => import('./components/Account/LoginPage.vue');
+const RegisterPage = () => import('./components/Account/RegisterPage.vue');
 
 const routes = [
   { path: '/', component: RoomList, name: 'RoomList' },

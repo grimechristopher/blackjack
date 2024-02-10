@@ -53,23 +53,11 @@ watch(() => playingCardRef.value, () => {
     playingCardRef.value.style.position = 'absolute';
     playingCardRef.value.style.top = props.handIndex * 1.5 + 'rem';
   }
-  else if (playingCardRef.value) {
+  else if (!props.handIndex && playingCardRef.value) {
     playingCardRef.value.style.position = 'relative';
-  
+    playingCardRef.value.style.top = 0;
   }
-}, {immediate: true});
-
-// watch(() => props.handIndex, () => {
-//   console.log("prop handIndex changed", playingCardRef.value, props.handIndex)
-//   if (props.handIndex && playingCardRef.value) {
-//     playingCardRef.value.style.position = 'absolute';
-//     playingCardRef.value.style.top = props.handIndex * 1.5 + 'rem';
-//   }
-//   else if (playingCardRef.value) {
-//     playingCardRef.value.style.position = 'relative';
-  
-//   }
-// }, {immediate: true});
+}, {immediate: true, deep: true});
 
 function setCard() {
 
