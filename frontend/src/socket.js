@@ -7,14 +7,14 @@ import hands from '@/data/hands';
 import cards from '@/data/cards';
 import player from '@/data/user';
 
-const URL = process.env.NODE_ENV === "production" ? window.location : "http://localhost:3000";
+const URL = process.env.NODE_ENV === "production" ? window.location : "http://localhost:3000/";
 
 export const socket = io(URL, {
   autoConnect: false,
   auth: {
     token: "Test"
   },
-  withCredentials: true,
+  credentials: true,
 });
 
 // Connection

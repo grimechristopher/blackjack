@@ -204,14 +204,18 @@ function isHandHittable(hand) {
   justify-content: center;
   align-items: center;
   height: 2rem;
+  margin-top: 0.33em;
+  margin-bottom: 0.33em;
 }
 
-/* .action-button {
+.action-button {
   border: 1px solid #fefefe;
+  background-color: black;
   color: #fefefe;
   border-radius: 5px;
+  margin: 0.25em;
 }
-.action-button:hover {
+/* .action-button:hover {
   background-color: #fefefe;
   color: #264f3b;
 } */

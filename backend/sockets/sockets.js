@@ -31,6 +31,7 @@ module.exports = {
         }
         catch (error) {
           socket.handshake.auth = null;
+          console.error("Error decoding jwt token: ", error.message)
         }
         
       }
