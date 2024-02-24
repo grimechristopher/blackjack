@@ -31,10 +31,17 @@ async function setAction(roomId, action) {
   await pool.query(query, values);
 }
 
+async function updateTurnStatus(roomId, status) {
+  let query = `UPDATE room SET turn_status = $1 WHERE id = $2`;
+  let values = [status, roomId];
+  await pool.query(query, values);
+}
+
 module.exports = {
   findAllRooms,
   findRoom,
   setRoomStatus,
   setActiveSeat,
   setAction,
+  updateTurnStatus,
 } 

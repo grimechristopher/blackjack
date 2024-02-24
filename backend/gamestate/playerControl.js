@@ -40,39 +40,47 @@ async function handleTurn(roomId, seatId) {
 
       // If player decided to hit
       if (data[roomId].room.player_action === 'Hit') {
-        console.info(`Room ${roomId}: Player ${data[roomId].room.player_action}`);
-        // Room action is reset 
-        await roomModel.setAction(roomId, null); // Set the rooms action to null since the action has been completed
-        data[roomId].room.player_action = null;
 
-        // Check players hand value. handle bust on hand
-        // if the player is over on all his hands then the turn is over
-        // Otherwise if the player is under on at least one continue the turn and reset the action timer
-        let playersSeat = data[roomId].seats.find(seat => seat.account_active_id === data[roomId].room.active_seat_number);
-        let handsBust = 0;
-        if (playersSeat) {
-          let playersHands = data[roomId].hands.filter(hand => hand.seat_id === playersSeat.id);
-          for (let hand of playersHands) {
-            let cards = data[roomId].cards.filter(card => card.hand_id === hand.id);
-            await calculateHandValue(cards);
-
-            if (hand.final_value > 21) {
-              console.info(`Room ${roomId}: Seat number ${playersSeat.account_active_id} busts on hand ${hand.id}`);
-              // await handModel.setRoundResult(hand.id, 1, 0, 0, 0);
-              handsBust += 1; 
+        if (data[roomId].room.turn_status === 'Processing') {
+          counter -=1;
+        }
+        else {
+          console.info(`Room ${roomId}: Player ${data[roomId].room.player_action}`);
+          // Room action is reset 
+          await roomModel.setAction(roomId, null); // Set the rooms action to null since the action has been completed
+          data[roomId].room.player_action = null;
+  
+          // Check players hand value. handle bust on hand
+          // if the player is over 21 on all his hands then the turn is over
+          // Otherwise if the player is under on at least one continue the turn and reset the action timer
+          let playersSeat = data[roomId].seats.find(seat => seat.id === seatId);
+          let handsBust = 0;
+          if (playersSeat) {
+            let playersHands = data[roomId].hands.filter(hand => hand.seat_id === playersSeat.id);
+            for (let hand of playersHands) {
+              let cards = data[roomId].cards.filter(card => card.hand_id === hand.id);
+              await calculateHandValue(cards);
+              await broadcaster.updateGameDataObjects(roomId);
+                
+              if (hand.final_value > 21) {
+                console.info(`Room ${roomId}: Seat number ${playersSeat.account_active_id} busts on hand ${hand.id}`);
+                // await handModel.setRoundResult(hand.id, 1, 0, 0, 0);
+                handsBust += 1; 
+              }
+            }
+            await broadcaster.updateGameDataObjects(roomId);
+            playersSeat = data[roomId].seats.find(seat => seat.id === seatId);
+            playersHands = data[roomId].hands.filter(hand => hand.seat_id === playersSeat.id);
+            console.log("Players hands", playersHands.length, handsBust)
+            if (handsBust === playersHands.length) {
+              resolve(); // resolve the interval if player busted
+              clearInterval(playerInterval);
             }
           }
-          await broadcaster.updateGameDataObjects(roomId);
-          playersSeat = data[roomId].seats.find(seat => seat.account_active_id === data[roomId].room.active_seat_number);
-          playersHands = data[roomId].hands.filter(hand => hand.seat_id === playersSeat.id);
-          console.log("Players hands", playersHands.length, handsBust)
-          if (handsBust === playersHands.length) {
-            resolve(); // resolve the interval if player busted
-            clearInterval(playerInterval);
-          }
+  
+          counter = 0;
         }
-
-        counter = 0;
+        
       }
 
       // If player decided to split
@@ -141,6 +149,9 @@ async function playerActionHit(playerId, roomId, handId) {
   }
   // Check if player is in active seat
   try {
+    await roomModel.updateTurnStatus(data[roomId].room.id, 'Processing')
+    await broadcaster.updateGameDataObjects(data[roomId].room.id);
+
     let activeSeat = data[roomId].seats.find(seat => seat.number === data[roomId].room.active_seat_number);
     let activeHand = data[roomId].hands.find(hand => hand.seat_id === activeSeat.id && hand.id === handId);
     // Make sure the hand is in the seat the player is in
@@ -150,10 +161,13 @@ async function playerActionHit(playerId, roomId, handId) {
       // Deal a card to the player
       await handModel.dealCard(handId, data[roomId].cards);
       await broadcaster.updateGameDataObjects(data[roomId].room.id);
+      let handsCards = data[roomId].cards.filter(card => card.hand_id === handId)
+      await calculateHandValue(handsCards);
     }
     else {
       console.error(`Room ${roomId}: Player ${playerId}is not in active seat`);
     }
+    await roomModel.updateTurnStatus(data[roomId].room.id, null)
   }
   catch (error) {
     console.error("Player action error", error);
